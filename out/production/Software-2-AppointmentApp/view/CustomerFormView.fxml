@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="view.CustomerFormController"
+            prefHeight="400.0" prefWidth="600.0" fx:id="mainUIBorderPane">
+
+    <left>
+        <VBox fx:id="sideMenuVBox" id="menuVBox" spacing="20">
+            <Button fx:id="customerViewMenuButton" text="Customers" styleClass="menuButton" alignment="BASELINE_CENTER" maxWidth="Infinity"/>
+            <Button fx:id="appointmentViewMenuButton" text="Appointments" styleClass="menuButton" alignment="BASELINE_CENTER" maxWidth="Infinity"/>
+            <Button fx:id="reportViewMenuButton" text="Reports" styleClass="menuButton" alignment="BASELINE_CENTER" maxWidth="Infinity"/>
+            <Button fx:id="logoutMenuButton" text="Logout" styleClass="menuButton" alignment="BASELINE_CENTER" maxWidth="Infinity"/>
+            <Label fx:id="currentUserLabel" alignment="BOTTOM_LEFT"/>
+        </VBox>
+    </left>
+
+    <right>
+        <Button fx:id="menuControlButton" text="Hide Menu" alignment="TOP_RIGHT"/>
+    </right>
+    <center>
+        <GridPane fx:id="customerFormGridPane" hgap="10" vgap="10">
+            <padding>
+                <Insets top="20" bottom="20" left="20" right="20"/>
+            </padding>
+            <columnConstraints>
+                <ColumnConstraints percentWidth="33"/>
+                <ColumnConstraints percentWidth="33"/>
+                <ColumnConstraints percentWidth="33"/>
+            </columnConstraints>
+
+            <HBox GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="3" spacing="10">
+                <Label text="ID: "/>
+                <TextField fx:id="customerIDTextField" disable="true" text="ID is Auto-Generated"/>
+                <Label text="Name: "/>
+                <TextField fx:id="customerNameTextField"/>
+                <Label text="Address: "/>
+                <TextField fx:id="customerAddressTextField"/>
+            </HBox>
+            <HBox GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.columnSpan="3" spacing="10">
+                <Label text="Postal Code: "/>
+                <TextField fx:id="customerPostalCodeTextField"/>
+                <Label text="Phone: "/>
+                <TextField fx:id="customerPhoneTextField"/>
+            </HBox>
+            <HBox GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="3" spacing="10">
+                <Label text="First-Level-Division: "/>
+                <ComboBox fx:id="customerDivisionComboBox"/>
+                <Label text="Country: "/>
+                <ComboBox fx:id="customerCountryComboBox"/>
+            </HBox>
+
+        </GridPane>
+    </center>
+</BorderPane>

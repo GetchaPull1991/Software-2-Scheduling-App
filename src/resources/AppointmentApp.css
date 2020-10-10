@@ -1,0 +1,21 @@
+.errorLabel{
+    -fx-text-fill: red;
+    -fx-font-weight: bold;
+}
+
+.menuButton{
+    -fx-border-style: none;
+    -fx-border-width: 0;
+    -fx-border-insets: 0;
+    -fx-background-color: #a903fc;
+    -fx-font-size: 16px;
+    -fx-text-fill: #ffffff;
+}
+
+.menuButton: hover{
+    -fx-background-color: #ca03fc;
+}
+
+#menuVBox{
+    -fx-background-color: #a903fc;
+}

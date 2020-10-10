@@ -15,7 +15,7 @@ public class Database {
     /**Connect to the database*/
     private static void connect(){
         try{
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection("jdbc:mysql://wgudb.ucertify.com:3306/WJ07XAQ", "U07XAQ", "53689156266");
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
@@ -320,6 +320,35 @@ public class Database {
     }
 
     /**
+     * @param username the username to search for
+     * @param password the password to search for
+     * @return boolean if the login is valid
+     */
+    public static boolean checkUserCredentials(String username, String password){
+
+        //Return variable
+        boolean isValid = false;
+
+        //Create connection
+        connect();
+
+        try(Statement statement = connection.createStatement()){
+
+            //Store the result set
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE User_Name = '" + username + "' AND Password = '" + password + "';");
+
+            //If the query returns a result, the login is valid
+            while(resultSet.next()){
+                isValid = true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        //Return whether or not the login is valid
+        return isValid;
+    }
+
+    /**
      * @return list of users
      */
     public static ObservableList<User> getAllUsers(){
@@ -488,13 +517,13 @@ public class Database {
             //Move cursor to first row of result set
             resultSet.next();
 
-            //Store the division id
+            //Store the contact id
             contactID = resultSet.getInt("Contact_ID");
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        //Insert customer into customers table
+        //Insert appointment into appointments table
         try(Statement statement = connection.createStatement()){
             statement.executeUpdate("INSERT INTO appointments (Appointment_ID, Title, " +
                     "Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) " +
@@ -554,7 +583,7 @@ public class Database {
             //Move cursor to first row of result set
             resultSet.next();
 
-            //Store the division id
+            //Store the contact id
             contactID = resultSet.getInt("Contact_ID");
         } catch (SQLException e) {
             e.printStackTrace();
