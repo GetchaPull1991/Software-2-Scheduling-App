@@ -4,7 +4,7 @@ package model;
 public class Customer {
     private String name;
     private String address;
-    private int postalCode;
+    private String postalCode;
     private String phoneNumber;
     private String division;
     private String country;
@@ -19,7 +19,7 @@ public class Customer {
      * @param country The country of the customer
      * @param customerID The ID of the customer
      */
-    public Customer(String name, String address, int postalCode, String phoneNumber, String division, String country, int customerID){
+    public Customer(String name, String address, String postalCode, String phoneNumber, String division, String country, int customerID){
         this.name = name;
         this.address = address;
         this.postalCode = postalCode;
@@ -60,14 +60,14 @@ public class Customer {
     /**
      * @return postal code
      */
-    public int getPostalCode() {
+    public String getPostalCode() {
         return postalCode;
     }
 
     /**
      * @param postalCode the postal code to set
      */
-    public void setPostalCode(int postalCode) {
+    public void setPostalCode(String postalCode) {
         this.postalCode = postalCode;
     }
 

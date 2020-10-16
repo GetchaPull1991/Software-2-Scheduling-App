@@ -1,6 +1,8 @@
 package model;
 
-import java.sql.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**Class to create and manage Appointments*/
 public class Appointment {
@@ -10,8 +12,10 @@ public class Appointment {
     private String description;
     private String location;
     private String type;
-    private Date startTimeDate;
-    private Date endTimeDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private int customerID;
 
     /**
@@ -21,22 +25,28 @@ public class Appointment {
      * @param description Thge description to set
      * @param location The location to set
      * @param type The type to set
-     * @param startTimeDate The start time and date to set
-     * @param endTimeDate The end time and date to set
+     * @param startDate The start date to set (Combines with start time)
+     * @param startTime The start time to set
+     * @param endDate The end date to set (Combines with end time)
+     * @param endTime The end time to set
      * @param customerID The customer id to set
      */
-    public Appointment(String contactName, int appointmentID, String title, String description, String location, String type, Date startTimeDate, Date endTimeDate, int customerID){
+    public Appointment(String contactName, int appointmentID, String title, String description, String location,
+                       String type, LocalDate startDate, LocalTime startTime, LocalDate endDate, LocalTime endTime, int customerID){
         this.contactName = contactName;
         this.appointmentID = appointmentID;
         this.title = title;
         this.description = description;
         this.location = location;
         this.type = type;
-        this.startTimeDate = startTimeDate;
-        this.endTimeDate = endTimeDate;
+        this.startDate = startDate;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.endDate = endDate;
         this.customerID = customerID;
     }
 
+    //Contact name
     /**
      * @return contact name
      */
@@ -51,6 +61,7 @@ public class Appointment {
         this.contactName = contactName;
     }
 
+    //Appointment ID
     /**
      * @return appointment id
      */
@@ -65,6 +76,7 @@ public class Appointment {
         this.appointmentID = appointmentID;
     }
 
+    //Title
     /**
      * @return title
      */
@@ -79,6 +91,7 @@ public class Appointment {
         this.title = title;
     }
 
+    //Description
     /**
      * @return description
      */
@@ -93,6 +106,7 @@ public class Appointment {
         this.description = description;
     }
 
+    //Location
     /**
      * @return location
      */
@@ -107,6 +121,7 @@ public class Appointment {
         this.location = location;
     }
 
+    //Type
     /**
      * @return type
      */
@@ -121,34 +136,67 @@ public class Appointment {
         this.type = type;
     }
 
+    //Start date
     /**
-     * @return the start date and time
+     * @return the start date
      */
-    public Date getStartTimeDate() {
-        return startTimeDate;
+    public LocalDate getStartDate() {
+        return startDate;
     }
 
     /**
-     * @param startTimeDate the start time and date to set
+     * @param startDate the start date to set
      */
-    public void setStartTimeDate(Date startTimeDate) {
-        this.startTimeDate = startTimeDate;
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
     }
 
+    //Start time
+    /**
+     * @return the start time
+     */
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    /**
+     * @param startTime the start time to set
+     */
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    //End date
     /**
      * @return the end time and date
      */
-    public Date getEndTimeDate() {
-        return endTimeDate;
+    public LocalDate getEndDate() {
+        return endDate;
     }
 
     /**
-     * @param endTimeDate the end time and date to set
+     * @param endDate the end date to set (Combines with end time)
      */
-    public void setEndTimeDate(Date endTimeDate) {
-        this.endTimeDate = endTimeDate;
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
     }
 
+    //End time
+    /**
+     * @return end time
+     */
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+
+    /**
+     * @param endTime the end time to set
+     */
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
+    }
+
+    //Customer ID
     /**
      * @return customer id
      */

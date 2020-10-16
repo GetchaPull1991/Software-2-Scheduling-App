@@ -1,5 +1,8 @@
 package view;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -8,11 +11,17 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import model.Database;
 import model.InputValidator;
+import model.User;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -38,6 +47,7 @@ public class LoginFormController implements Initializable {
     //Display confirmation to exit application
     Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
 
+
     /**
      * @param stage the stage to set
      */
@@ -59,7 +69,7 @@ public class LoginFormController implements Initializable {
         Locale currentLocale = Locale.getDefault();
 
         //Set the Location label
-        userLocationLabel.setText("Location: " + currentLocale.getCountry());
+        userLocationLabel.setText("Location: " + currentLocale.getDisplayCountry());
 
         //Get the language of the user machine
         String userLanguage = currentLocale.getLanguage();
@@ -74,23 +84,52 @@ public class LoginFormController implements Initializable {
         //Check if input is valid
         if (InputValidator.validateLoginForm(this)){
             //store username
-            String username = userIDTextField.getText();
+            User user = Database.getUser(userIDTextField.getText());
 
             //Open the Customer form
             FXMLLoader loader = new FXMLLoader(getClass().getResource("../view/CustomerFormView.fxml"));
             Parent root = loader.load();
 
-            //Get the customer form controller and pass the stage to it
+            //Get the customer form controller
             CustomerFormController controller = loader.getController();
-            controller.setPrimaryStage(primaryStage);
-            controller.currentUserLabel.setText(username);
 
-            Scene customerForm = new Scene(root, 1000, 700);
+            //Set the stage and user in the customer form controller
+            CustomerFormController.primaryStage = primaryStage;
+            CustomerFormController.currentUser = user;
+
+            //Set the username label and timezone label
+            controller.currentUserLabel.setText("User: \n" + user.getUserName());
+            controller.currentTimeZoneLabel.setText("TimeZone: \n" + Calendar.getInstance().getTimeZone().getDisplayName());
+
+            // DOES NOT CHANGE BASED ON LOCALE
+            //Display the current time based on the users location and local time zone
+            Timeline clock = new Timeline(new KeyFrame(Duration.ZERO, e -> {
+                LocalTime currentTime = LocalTime.now();
+
+                //Format time if user is in the US
+                if (currentTime.isAfter(LocalTime.of(12, 59)) && Locale.getDefault().getCountry().equals("US")) {
+                    controller.currentLocalTimeLabel.setText("Local Time: \n" + currentTime.minusHours(12).format(DateTimeFormatter.ofPattern("HH:mm:ss")) + " pm");
+                } else if (Locale.getDefault().getCountry().equals("US")){
+                    controller.currentLocalTimeLabel.setText("Local Time: \n" + currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")) + " am");
+                } else {
+                    controller.currentLocalTimeLabel.setText("Local Time: \n" + currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                }
+
+            }),
+                    new KeyFrame(Duration.seconds(1))
+            );
+            clock.setCycleCount(Animation.INDEFINITE);
+            clock.play();
+
+
+            //Create customer form scene and link stylesheet
+            Scene customerForm = new Scene(root, 1000, 800);
             URL stylesheet = getClass().getResource("../resources/AppointmentApp.css");
             customerForm.getStylesheets().add(stylesheet.toExternalForm());
 
             //Set the scene and show
             primaryStage.setScene(customerForm);
+            primaryStage.setResizable(true);
             primaryStage.show();
         }
 

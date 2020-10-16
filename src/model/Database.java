@@ -5,6 +5,7 @@ import javafx.collections.ObservableList;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**Class for handling database operations*/
@@ -64,7 +65,7 @@ public class Database {
     /**
      * @return list of countries
      */
-    public static ObservableList<String> getCountries(){
+    public static ObservableList<String> getAllCountries(){
         //Create connection
         connect();
         //List to store the countries
@@ -92,7 +93,7 @@ public class Database {
     /**
      * @return list of divisions
      */
-    public static ObservableList<Division> getDivisions(){
+    public static ObservableList<Division> getAllDivisions(){
         //Create connection
         connect();
         //List to store divisions
@@ -119,6 +120,33 @@ public class Database {
         return divisionList;
     }
 
+    public static ObservableList<String> getCountryDivisions(String country){
+        //Create connection
+        connect();
+        //List to store divisions
+        ObservableList<String> divisionList = FXCollections.observableArrayList();
+
+        //Try statement
+        try(Statement statement = connection.createStatement()){
+            //Get result set
+            ResultSet queryResult = statement.executeQuery("SELECT first_level_divisions.Division_ID, first_level_divisions.Division, first_level_divisions.COUNTRY_ID " +
+                    "FROM first_level_divisions JOIN countries ON first_level_divisions.COUNTRY_ID = countries.Country_ID " +
+                    "WHERE Country = '" + country + "';");
+
+            //Loop through query result and append division name to list
+            while(queryResult.next()){
+                divisionList.add(queryResult.getString("Division"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        //Close connection
+        disconnect();
+
+        //Return the division list
+        return divisionList;
+    }
+
     /**
      * @return list of all appointments
      */
@@ -131,18 +159,18 @@ public class Database {
         //Try statement
         try(Statement statement = connection.createStatement()){
             //Get result set
-            ResultSet queryResult = statement.executeQuery("SELECT * FROM appointments;");
+            ResultSet queryResult = statement.executeQuery("SELECT * FROM appointments ORDER BY Start DESC;");
 
             //Loop through query result and append Contact objects to list
             while(queryResult.next()){
 
                 //Get the contact name with the contact id associated with the appointment
-                String contactName = "";
+                String contactName;
                 try(Statement statement1 = connection.createStatement()){
                     ResultSet queryResult1 = statement1.executeQuery("SELECT Contact_Name FROM contacts WHERE Contact_ID ='"
-                            + queryResult.getInt("Contact_ID" + "';"));
+                            + queryResult.getInt("Contact_ID") + "';");
                     queryResult1.next();
-                    contactName = queryResult.getString("Contact_Name");
+                    contactName = queryResult1.getString("Contact_Name");
                 }
 
                 //Create appointment and add to list
@@ -152,8 +180,10 @@ public class Database {
                                                     queryResult.getString("Description"),
                                                     queryResult.getString("Location"),
                                                     queryResult.getString("Type"),
-                                                    queryResult.getDate("Start"),
-                                                    queryResult.getDate("End"),
+                                                    queryResult.getDate("Start").toLocalDate(),
+                                                    queryResult.getTime("Start").toLocalTime(),
+                                                    queryResult.getDate("End").toLocalDate(),
+                                                    queryResult.getTime("End").toLocalTime(),
                                                     queryResult.getInt("Customer_ID")));
             }
         } catch (SQLException e) {
@@ -164,6 +194,52 @@ public class Database {
 
         //Return the appointment list
         return appointmentList;
+    }
+
+    public static Appointment getAppointmentByID(int appointmentID){
+        //Create connection
+        connect();
+        //List to store appointments
+        Appointment appointment = null;
+
+        //Try statement
+        try(Statement statement = connection.createStatement()){
+            //Get result set
+            ResultSet queryResult = statement.executeQuery("SELECT * FROM appointments WHERE Appointment_ID = '" + appointmentID + "';");
+
+            //Loop through query result and append Contact objects to list
+            while(queryResult.next()){
+
+                //Get the contact name with the contact id associated with the appointment
+                String contactName;
+                try(Statement statement1 = connection.createStatement()){
+                    ResultSet queryResult1 = statement1.executeQuery("SELECT Contact_Name FROM contacts WHERE Contact_ID ='"
+                            + queryResult.getInt("Contact_ID") + "';");
+                    queryResult1.next();
+                    contactName = queryResult1.getString("Contact_Name");
+                }
+
+                //Create appointment and add to list
+                appointment = new Appointment(contactName,
+                        queryResult.getInt("Appointment_ID"),
+                        queryResult.getString("Title"),
+                        queryResult.getString("Description"),
+                        queryResult.getString("Location"),
+                        queryResult.getString("Type"),
+                        queryResult.getDate("Start").toLocalDate(),
+                        queryResult.getTime("Start").toLocalTime(),
+                        queryResult.getDate("End").toLocalDate(),
+                        queryResult.getTime("End").toLocalTime(),
+                        queryResult.getInt("Customer_ID"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        //Close connection
+        disconnect();
+
+        //Return the appointment list
+        return appointment;
     }
 
     /**
@@ -178,31 +254,37 @@ public class Database {
 
         //Try statement
         try(Statement statement = connection.createStatement()){
+
+            //query string
+            String appointmentsQuery = "SELECT * FROM appointments WHERE Customer_ID = '" + customerID + "';";
             //Get result set
-            ResultSet queryResult = statement.executeQuery("SELECT * FROM appointments WHERE Customer_ID = '" + customerID + "';");
+            ResultSet appointmentsQueryResult = statement.executeQuery(appointmentsQuery);
 
             //Loop through query result and append Contact objects to list
-            while(queryResult.next()){
+            while(appointmentsQueryResult.next()){
 
+                //query string
+                String contactNameQuery = "SELECT Contact_Name FROM contacts WHERE Contact_ID ='" + appointmentsQueryResult.getInt("Contact_ID") + "';";
                 //Get the contact name with the contact id associated with the appointment
-                String contactName = "";
+                String contactName;
                 try(Statement statement1 = connection.createStatement()){
-                    ResultSet queryResult1 = statement1.executeQuery("SELECT Contact_Name FROM contacts WHERE Contact_ID ='"
-                            + queryResult.getInt("Contact_ID" + "';"));
-                    queryResult1.next();
-                    contactName = queryResult.getString("Contact_Name");
+                    ResultSet contactNameQueryResult = statement1.executeQuery(contactNameQuery);
+                    contactNameQueryResult.next();
+                    contactName = contactNameQueryResult.getString("Contact_Name");
                 }
 
                 //Create appointment and add to list
                 appointmentList.add(new Appointment(contactName,
-                        queryResult.getInt("Appointment_ID"),
-                        queryResult.getString("Title"),
-                        queryResult.getString("Description"),
-                        queryResult.getString("Location"),
-                        queryResult.getString("Type"),
-                        queryResult.getDate("Start"),
-                        queryResult.getDate("End"),
-                        queryResult.getInt("Customer_ID")));
+                        appointmentsQueryResult.getInt("Appointment_ID"),
+                        appointmentsQueryResult.getString("Title"),
+                        appointmentsQueryResult.getString("Description"),
+                        appointmentsQueryResult.getString("Location"),
+                        appointmentsQueryResult.getString("Type"),
+                        appointmentsQueryResult.getDate("Start").toLocalDate(),
+                        appointmentsQueryResult.getTime("Start").toLocalTime(),
+                        appointmentsQueryResult.getDate("End").toLocalDate(),
+                        appointmentsQueryResult.getTime("End").toLocalTime(),
+                        appointmentsQueryResult.getInt("Customer_ID")));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -233,7 +315,7 @@ public class Database {
             while(queryResult.next()){
 
                 //Get the contact name with the contact id associated with the appointment
-                String contactName = "";
+                String contactName;
                 try(Statement statement1 = connection.createStatement()){
                     ResultSet queryResult1 = statement1.executeQuery("SELECT Contact_Name FROM contacts WHERE Contact_ID ='"
                             + queryResult.getInt("Contact_ID" + "';"));
@@ -248,8 +330,10 @@ public class Database {
                         queryResult.getString("Description"),
                         queryResult.getString("Location"),
                         queryResult.getString("Type"),
-                        queryResult.getDate("Start"),
-                        queryResult.getDate("End"),
+                        queryResult.getDate("Start").toLocalDate(),
+                        queryResult.getTime("Start").toLocalTime(),
+                        queryResult.getDate("End").toLocalDate(),
+                        queryResult.getTime("End").toLocalTime(),
                         queryResult.getInt("Customer_ID")));
             }
         } catch (SQLException e) {
@@ -281,8 +365,8 @@ public class Database {
             while(queryResult.next()){
 
                 //Create variables for division name and country name
-                String divisionName = "";
-                String countryName = "";
+                String divisionName;
+                String countryName;
 
                 //Try statement
                 try(Statement statement1 = connection.createStatement()){
@@ -303,7 +387,7 @@ public class Database {
                 //Create Customer and add to list
                 customerList.add(new Customer(queryResult.getString("Customer_Name"),
                         queryResult.getString("Address"),
-                        queryResult.getInt("Postal_Code"),
+                        queryResult.getString("Postal_Code"),
                         queryResult.getString("Phone"),
                         divisionName,
                         countryName,
@@ -317,6 +401,64 @@ public class Database {
 
         //Return the Customer list
         return customerList;
+    }
+
+    /**
+     * Return the customer based on the customer id
+     * @param id the id to search for
+     * @return the customer to return
+     */
+    public static Customer getCustomerByID(int id){
+        //Create connection
+        connect();
+        //List to store customers
+        Customer customer = null;
+
+        //Try statement
+        try(Statement statement = connection.createStatement()){
+            //Get result set
+            ResultSet queryResult = statement.executeQuery("SELECT * FROM customers WHERE Customer_ID = '" + id + "';");
+
+            //Loop through query result and append Customer objects to list
+            while(queryResult.next()){
+
+                //Create variables for division name and country name
+                String divisionName;
+                String countryName;
+
+                //Try statement
+                try(Statement statement1 = connection.createStatement()){
+
+                    //Get division name and country name
+                    ResultSet resultSet = statement1.executeQuery("SELECT first_level_divisions.Division, countries.Country " +
+                            "FROM first_level_divisions join countries ON first_level_divisions.COUNTRY_ID = countries.Country_ID " +
+                            "WHERE Division_ID = '" + queryResult.getInt("Division_ID") + "';");
+
+                    //Move cursor to first row of result set
+                    resultSet.next();
+
+                    //Get division name and country name from result set
+                    divisionName = resultSet.getString("Division");
+                    countryName = resultSet.getString("Country");
+                }
+
+                //Create Customer and add to list
+                customer = new Customer(queryResult.getString("Customer_Name"),
+                        queryResult.getString("Address"),
+                        queryResult.getString("Postal_Code"),
+                        queryResult.getString("Phone"),
+                        divisionName,
+                        countryName,
+                        queryResult.getInt("Customer_ID"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        //Close connection
+        disconnect();
+
+        //Return the Customer list
+        return customer;
     }
 
     /**
@@ -378,6 +520,33 @@ public class Database {
         return userList;
     }
 
+    public static User getUser(String name){
+        //Create connection
+        connect();
+        //Variable to store user
+        User user = null;
+
+        //Try statement
+        try(Statement statement = connection.createStatement()){
+            //Get result set
+            ResultSet queryResult = statement.executeQuery("SELECT * FROM users WHERE User_Name = '" + name + "';");
+
+            //Create the user
+            while(queryResult.next()){
+                user = new User(queryResult.getInt("User_ID"),
+                        queryResult.getString("User_Name"),
+                        queryResult.getString("Password"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        //Close connection
+        disconnect();
+
+        //Return the user
+        return user;
+    }
+
     /**
      * @param user the current application user
      * @param customer the customer to add
@@ -412,11 +581,11 @@ public class Database {
 
         //Insert customer into customers table
         try(Statement statement = connection.createStatement()){
-            statement.executeUpdate("INSERT INTO customers (Customer_ID, Customer_Name, " +
-                    "Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
+            String query = "INSERT INTO customers (Customer_ID, Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
                     "Values ('" + customer.getCustomerID() + "' , '" + customer.getName() + "' , '" + customer.getAddress() + "' , '" +
                     customer.getPostalCode() + "' , '" + customer.getPhoneNumber() + "' , '" + currentDateTimestamp + "' , '" +
-                    user.getUserName() + "' , '" + currentDateTimestamp + "' , '" + user.getUserName() + "' , '" + divisionID + "';");
+                    user.getUserName() + "' , '" + currentDateTimestamp + "' , '" + user.getUserName() + "' , '" + divisionID + "');";
+            statement.executeUpdate(query);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -502,6 +671,10 @@ public class Database {
         Date date = formatter.parse(formatter.format(System.currentTimeMillis()));
         Timestamp currentDateTimestamp = new Timestamp(date.getTime());
 
+        //Get start and end date and time
+        LocalDateTime startDateTime = LocalDateTime.of(appointment.getStartDate(), appointment.getStartTime());
+        LocalDateTime endDateTime = LocalDateTime.of(appointment.getEndDate(), appointment.getEndTime());
+
         //Variable to store contact id
         int contactID = 0;
 
@@ -523,14 +696,15 @@ public class Database {
             e.printStackTrace();
         }
 
+        //SYNTAX ERROR
         //Insert appointment into appointments table
         try(Statement statement = connection.createStatement()){
             statement.executeUpdate("INSERT INTO appointments (Appointment_ID, Title, " +
                     "Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) " +
                     "Values ('" + appointment.getAppointmentID() + "' , '" + appointment.getTitle() + "' , '" + appointment.getDescription() + "' , '" +
-                    appointment.getLocation() + "' , '" + appointment.getType() + "' , '" + appointment.getStartTimeDate() + "' , '" +
-                    appointment.getEndTimeDate() + "' , '" + currentDateTimestamp + "' , '" + user.getUserName() + "' , '" + currentDateTimestamp + "' , '" + user.getUserName() + "' , '" +
-                    appointment.getCustomerID() + "' , '" + user.getUserID() + "' , '" + contactID + "';");
+                    appointment.getLocation() + "' , '" + appointment.getType() + "' , '" + startDateTime + "' , '" +
+                    endDateTime + "' , '" + currentDateTimestamp + "' , '" + user.getUserName() + "' , '" + currentDateTimestamp + "' , '" + user.getUserName() + "' , '" +
+                    appointment.getCustomerID() + "' , '" + user.getUserID() + "' , '" + contactID + "');");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -568,6 +742,10 @@ public class Database {
         Date date = formatter.parse(formatter.format(System.currentTimeMillis()));
         Timestamp currentDateTimestamp = new Timestamp(date.getTime());
 
+        //Get start and end date and time
+        LocalDateTime startDateTime = LocalDateTime.of(appointment.getStartDate(), appointment.getStartTime());
+        LocalDateTime endDateTime = LocalDateTime.of(appointment.getEndDate(), appointment.getEndTime());
+
         //Variable to store contact id
         int contactID = 0;
 
@@ -589,13 +767,15 @@ public class Database {
             e.printStackTrace();
         }
 
+        String query = "UPDATE appointments SET Title = '" + appointment.getTitle() + "' , " +
+                "Description = '" + appointment.getDescription() + "' , Location = '" + appointment.getLocation() + "' , Type = '" + appointment.getType() +
+                "' , Start = '" + startDateTime + "' , End = '" + endDateTime +
+                "', Last_Update = '" + currentDateTimestamp + "' , Last_Updated_By = '" + user.getUserName() + "' , Customer_ID = '" + appointment.getCustomerID() +
+                "' , User_ID = '" + user.getUserID() + "' , Contact_ID = '" + contactID + "' WHERE Appointment_ID = '" + appointment.getAppointmentID() + "';";
+
         //Update appointment in appointments table
         try(Statement statement = connection.createStatement()){
-            statement.executeUpdate("UPDATE appointments SET Title = '" + appointment.getTitle() + "' , " +
-                    "Description = '" + appointment.getDescription() + "' , Location = '" + appointment.getLocation() + "' , Type = '" + appointment.getType() +
-                    "' , Start = '" + appointment.getStartTimeDate() + "' , End = '" + appointment.getEndTimeDate() +
-                    "', Last_Update = '" + currentDateTimestamp + "' , Last_Updated_By = '" + user + "' , Customer_ID = '" + appointment.getCustomerID() +
-                    "' , User_ID = '" + user.getUserID() + "' , Contact_ID = '" + contactID + " WHERE Appointment_ID = '" + appointment.getAppointmentID() + "';");
+            statement.executeUpdate(query);
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -1,6 +1,10 @@
 .errorLabel{
     -fx-text-fill: red;
     -fx-font-weight: bold;
+    -fx-border-width: 1px;
+    -fx-border-color: black;
+    -fx-background-color: #ffffff;
+    -fx-padding: 5px;
 }
 
 .menuButton{
@@ -10,6 +14,28 @@
     -fx-background-color: #a903fc;
     -fx-font-size: 16px;
     -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.menuLabel{
+    -fx-font-size: 14px;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.formVbox{
+    -fx-border-width: 1px;
+    -fx-border-color: #9f47fc;
+    -fx-border-radius: 10px;
+}
+
+
+
+#formLabel{
+    -fx-font-weight: bold;
+    -fx-font-size: 20px;
+    -fx-font-style: italic;
+    -fx-text-fill: #993dfc;
 }
 
 .menuButton: hover{
@@ -18,4 +44,28 @@
 
 #menuVBox{
     -fx-background-color: #a903fc;
+}
+
+.table-view{
+    -fx-border-width: 1px;
+    -fx-border-color: #9f47fc;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px 10px 10px 10px;
+    -fx-focus-color: transparent;
+}
+
+
+.table-view .column-header-background{
+    -fx-background-radius: 10px 10px 0px 0px;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+}
+
+
+.table-view .virtual-flow .scroll-bar:horizontal,
+.table-view .virtual-flow .scroll-bar:horizontal .track,
+.table-view .virtual-flow .scroll-bar:horizontal .track-background {
+    -fx-background-radius: 10px 10px 10px 10px;
 }

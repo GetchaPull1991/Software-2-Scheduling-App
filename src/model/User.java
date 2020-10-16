@@ -1,5 +1,7 @@
 package model;
 
+import javafx.beans.property.SimpleStringProperty;
+
 public class User {
 
     private int userID;
@@ -36,6 +38,10 @@ public class User {
      */
     public String getUserName() {
         return userName;
+    }
+
+    public SimpleStringProperty getUserNameProperty(){
+        return new SimpleStringProperty(userName);
     }
 
     /**
