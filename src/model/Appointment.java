@@ -17,6 +17,7 @@ public class Appointment {
     private LocalTime startTime;
     private LocalTime endTime;
     private int customerID;
+    private String user;
 
     /**
      * @param contactName The contact name to set
@@ -32,7 +33,7 @@ public class Appointment {
      * @param customerID The customer id to set
      */
     public Appointment(String contactName, int appointmentID, String title, String description, String location,
-                       String type, LocalDate startDate, LocalTime startTime, LocalDate endDate, LocalTime endTime, int customerID){
+                       String type, LocalDate startDate, LocalTime startTime, LocalDate endDate, LocalTime endTime, int customerID, String user){
         this.contactName = contactName;
         this.appointmentID = appointmentID;
         this.title = title;
@@ -44,6 +45,7 @@ public class Appointment {
         this.endTime = endTime;
         this.endDate = endDate;
         this.customerID = customerID;
+        this.user = user;
     }
 
     //Contact name
@@ -209,5 +211,19 @@ public class Appointment {
      */
     public void setCustomerID(int customerID) {
         this.customerID = customerID;
+    }
+
+    /**
+     * @return the user
+     */
+    public String getUser() {
+        return user;
+    }
+
+    /**
+     * @param user the user to set
+     */
+    public void setUser(String user) {
+        this.user = user;
     }
 }

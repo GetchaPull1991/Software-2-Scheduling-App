@@ -1,19 +1,9 @@
 package model;
 
-import javafx.scene.Node;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ComboBoxBase;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.VBox;
 import view.AppointmentFormController;
 import view.CustomerFormController;
 import view.LoginFormController;
 import view.ReportViewController;
-
-import java.awt.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -38,7 +28,7 @@ public class InputValidator {
        if (userName.equals("") || password.equals("")){
 
            //Display error
-           controller.inputErrorLabel.setText("* Please enter Username and Password");
+           controller.inputErrorLabel.setText(controller.resourceBundle.getString("emptyFieldError"));
            controller.inputErrorLabel.setVisible(true);
 
            //Set is valid to false
@@ -48,7 +38,7 @@ public class InputValidator {
        } else if (!Database.checkUserCredentials(userName, password)){
 
            //Display error
-           controller.inputErrorLabel.setText("* The Username and/or Password you entered does not match our records");
+           controller.inputErrorLabel.setText(controller.resourceBundle.getString("invalidCredentialsError"));
            controller.inputErrorLabel.setVisible(true);
 
            //Set is valid to false
@@ -80,22 +70,19 @@ public class InputValidator {
        //Store the result of the validation
        boolean isValid = true;
 
-       //Get Customer information
-       //Get user input
-       String name = controller.customerNameTextField.getText();
-       String address = controller.customerAddressTextField.getText();
-       String postalCode = controller.customerPostalCodeTextField.getText();
-       String phone = controller.customerPhoneTextField.getText();
-       String country = controller.customerCountryComboBox.getValue();
-       String division = controller.customerDivisionComboBox.getValue();
-
-       if (name.equals("") || address.equals("") || postalCode.equals("") || phone.equals("") || country.equals("") || division.equals("")){
-            controller.errorLabel.setText("* All Fields Are Required");
+        //Check for empty fields
+       if (controller.customerNameTextField.getText().equals("")
+               || controller.customerAddressTextField.getText().equals("")
+               || controller.customerPostalCodeTextField.getText().equals("")
+               || controller.customerPhoneTextField.getText().equals("")
+               || controller.customerCountryComboBox.getValue().equals("")
+               || controller.customerDivisionComboBox.getValue().equals("")){
+            controller.errorLabel.setText(controller.resourceBundle.getString("customerEmptyFieldsError"));
             controller.errorLabel.setVisible(true);
             isValid = false;
        } else controller.errorLabel.setVisible(false);
 
-       //Returnt he result of the validation
+       //Return the result of the validation
        return isValid;
    }
 
@@ -106,76 +93,34 @@ public class InputValidator {
     public static boolean validateAppointmentForm(AppointmentFormController controller){
 
         //Store the result of the validation
-        boolean isValid = true;
+        boolean isValid = false;
 
-        //Get Customer information
-        //Get user input
-        String contact = controller.appointmentContactComboBox.getValue();
-        String customerID = controller.appointmentCustomerIDComboBox.getValue();
-        String title = controller.appointmentTitleTextField.getText();
-        String location = controller.appointmentLocationTextField.getText();
-        String description = controller.appointmentDescriptionTextArea.getText();
-        LocalDate startDate = controller.appointmentStartDatepicker.getValue();
-        LocalDate endDate = controller.appointmentEndDatepicker.getValue();
+        //Continue checks while valid
 
-        //Select hours and minutes from string and strip formatting to get start time
-        LocalTime startTime = LocalTime.of(Integer.parseInt(controller.startTimeComboBox.getValue().substring(0,2)),
-                Integer.parseInt(controller.startTimeComboBox.getValue().substring(3,5)));
+            //Check if fields are empty
+            if (controller.appointmentContactComboBox.getValue() == null
+                    || controller.appointmentCustomerIDComboBox.getValue() == null
+                    || controller.appointmentTitleTextField.getText().equals("")
+                    || controller.appointmentLocationTextField.getText().equals("")
+                    || controller.appointmentDescriptionTextArea.getText().equals("")
+                    || controller.appointmentStartDatepicker.getValue() == null
+                    || controller.appointmentEndDatepicker.getValue() == null
+                    || controller.startTimeComboBox.getValue() == null
+                    || controller.endTimeComboBox.getValue() == null) {
+                controller.errorLabel.setText(controller.resourceBundle.getString("emptyFieldsError"));
+                controller.errorLabel.setVisible(true);
+            } else if (Database.customerAppointmentOverlaps(controller.appointmentCustomerIDComboBox.getValue(),
+                                                        LocalDateTime.of(controller.appointmentStartDatepicker.getValue(), convertStringToLocalTime(controller.startTimeComboBox.getValue())),
+                                                                LocalDateTime.of(controller.appointmentEndDatepicker.getValue(), convertStringToLocalTime(controller.endTimeComboBox.getValue())))) {
 
-        //Select hours and minutes from string and strip formatting to get end time
-        LocalTime endTime = LocalTime.of(Integer.parseInt(controller.endTimeComboBox.getValue().substring(0, 2)),
-                Integer.parseInt(controller.endTimeComboBox.getValue().substring(3, 5)));
-
-        //Check if the start date and time is before the end date and time
-        if (LocalDateTime.of(startDate, startTime).compareTo(LocalDateTime.of(endDate, endTime)) >= 0){
-            controller.errorLabel.setText("* The Start Date and Time of the Appointment must be before the End Date and Time");
-            controller.errorLabel.setVisible(true);
-            isValid = false;
-        }
-
-        /*
-        NEED INPUT VALIDATION FOR ENDTIME AND STARTTIME
-         */
-
-
-
-        if (contact == null || customerID.equals("") || title.equals("")
-                || location.equals("") || description.equals("") || startDate == null || endDate == null || startTime == null || endTime == null){
-            controller.errorLabel.setText("* All Fields Are Required");
-            controller.errorLabel.setVisible(true);
-            isValid = false;
-        } else if(endDate.isBefore(startDate) || endTime.isBefore(startTime)) {
-
-        }
-
-        //controller.errorLabel.setVisible(false);
-
-
-        /*
-        //GET THE FIELDS FROM VBOX/HBOX NOT GRIDPANE//
-        //VBOX/HBOX CHILDREN OF GRID PANE, HBOX CHILD OF VBOX, FIELDS CHILD OF HBOX
-        //Get all the fields
-        for (Node child : controller.appointmentFormGridPane.getChildren()){
-
-            if (child instanceof VBox){
-                for ()
-                if (((TextField) child).getText().trim().isEmpty()){
-                    isValid = false;
-                }
-            } else if (child instanceof ComboBox){
-                if (((ComboBox) child).getSelectionModel().isEmpty()){
-                    isValid = false;
-                }
-            } else if (child instanceof DatePicker){
-                if (((DatePicker) child).getValue() == null){
-                    isValid = false;
-                }
+                controller.errorLabel.setText(controller.resourceBundle.getString("overlappingAppointmentError"));
+                controller.errorLabel.setVisible(true);
+            } else {
+                isValid = true;
+                controller.errorLabel.setVisible(false);
             }
-        }
 
-         */
-
-        //Returnt he result of the validation
+        //Return the result of the validation
         return isValid;
     }
 
@@ -188,8 +133,38 @@ public class InputValidator {
         //Store the result of the validation
         boolean isValid = true;
 
-        //Returnt he result of the validation
+        //Check if required fields are filled
+        if (controller.scheduleByCustomerRadio.isSelected() && controller.customerComboBox.getValue() == null){
+            controller.errorLabel.setText(controller.resourceBundle.getString("noSelectionError"));
+            controller.errorLabel.setVisible(true);
+            isValid = false;
+        }
+
+        if (controller.scheduleByContactRadio.isSelected() && controller.contactComboBox.getValue() == null){
+            controller.errorLabel.setText(controller.resourceBundle.getString("noSelectionError"));
+            controller.errorLabel.setVisible(true);
+            isValid = false;
+        }
+
+        if (controller.reportTypeMonthRadio.isSelected()){
+            if (controller.typeComboBox.getValue() == null || controller.monthComboBox.getValue() == null){
+                controller.errorLabel.setText(controller.resourceBundle.getString("noSelectionError"));
+                controller.errorLabel.setVisible(true);
+                isValid = false;
+            }
+        }
+
+        //Return the result of the validation
         return isValid;
+    }
+
+    /**
+     * Convert a string time value in HH:mm format to a LocalTime object
+     * @param time the string time value to convert
+     * @return the LocalTime object
+     */
+    public static LocalTime convertStringToLocalTime (String time){
+        return LocalTime.of(Integer.parseInt(time.substring(0, 2)), Integer.parseInt(time.substring(3, 5)));
     }
 
 }

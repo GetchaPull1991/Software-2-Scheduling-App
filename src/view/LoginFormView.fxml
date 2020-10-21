@@ -8,39 +8,36 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<GridPane fx:controller="view.LoginFormController"
-          xmlns:fx="http://javafx.com/fxml" alignment="center" hgap="10" vgap="10">
-
-
-    <columnConstraints>
-        <ColumnConstraints percentWidth="30"/>
-        <ColumnConstraints percentWidth="30"/>
-        <ColumnConstraints percentWidth="20"/>
-        <ColumnConstraints percentWidth="20"/>
-    </columnConstraints>
-    <rowConstraints>
-        <RowConstraints percentHeight="20"/>
-        <RowConstraints percentHeight="20"/>
-        <RowConstraints percentHeight="20"/>
-        <RowConstraints percentHeight="20"/>
-        <RowConstraints percentHeight="20"/>
-    </rowConstraints>
-
-    <padding>
-        <Insets top="20" bottom="20" right="20" left="20"/>
-    </padding>
-
-    <Label text="Username: " GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-    <TextField fx:id="userIDTextField" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
-
-    <Label text="Password: " GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-    <PasswordField fx:id="userPasswordField" GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.columnSpan="3"/>
-
-    <Label fx:id="userLocationLabel" GridPane.rowIndex="2" GridPane.columnSpan="4"/>
-    <Label fx:id="inputErrorLabel" styleClass="errorLabel" wrapText="true" GridPane.rowIndex="3" GridPane.columnSpan="4" visible="false"/>
-
-    <Button fx:id="loginButton" text="Login" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
-    <Button fx:id="cancelButton" text="Cancel" GridPane.columnIndex="3" GridPane.rowIndex="4"/>
-
-
-</GridPane>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.BorderPane?>
+<BorderPane fx:controller="view.LoginFormController"
+            xmlns:fx="http://javafx.com/fxml" >
+    <left>
+        <VBox spacing="18" id="loginLabelVBox">
+            <padding>
+                <Insets top="50" bottom="10" right="10" left="10"/>
+            </padding>
+            <Label fx:id="usernameLabel" text="Username: " styleClass="loginLabel"/>
+            <Label fx:id="passwordLabel" text="Password: " styleClass="loginLabel"/>
+            <Label fx:id="userLocationLabel" styleClass="loginLabel"/>
+        </VBox>
+    </left>
+    <center>
+        <VBox spacing="10" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets top="50" bottom="10" right="10" left="10"/>
+            </padding>
+            <TextField fx:id="userIDTextField" HBox.hgrow="ALWAYS"/>
+            <PasswordField fx:id="userPasswordField" HBox.hgrow="ALWAYS"/>
+            <Label fx:id="inputErrorLabel" styleClass="errorLabel" wrapText="true" visible="false"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <HBox spacing="10">
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="loginButton" text="Login"/>
+                <Button fx:id="cancelButton" text="Cancel"/>
+            </HBox>
+        </VBox>
+    </center>
+</BorderPane>

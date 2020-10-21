@@ -11,6 +11,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.*;
@@ -19,20 +20,31 @@ import java.net.URL;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Random;
 import java.util.ResourceBundle;
 
 public class CustomerFormController implements Initializable {
     @FXML
-    public  Label currentUserLabel;
+    public Label customerTablePlaceholder;
+    @FXML
+    public Label customerDivisionLabel;
+    @FXML
+    public Label customerCountryLabel;
+    @FXML
+    public Label customerPhoneLabel;
+    @FXML
+    public Label customerPostalCodeLabel;
+    @FXML
+    public Label customerAddressLabel;
+    @FXML
+    public Label customerNameLabel;
+    @FXML
+    public Label customerIDLabel;
     @FXML
     public ComboBox<String> customerCountryComboBox;
     @FXML
     public ComboBox<String> customerDivisionComboBox;
-    @FXML
-    public BorderPane contentBorderPane;
-    @FXML
-    public Label formLabel;
     @FXML
     public TextField customerIDTextField;
     @FXML
@@ -69,42 +81,18 @@ public class CustomerFormController implements Initializable {
     public Label errorLabel;
     @FXML
     public GridPane customerFormGridPane;
-    @FXML
-    public Label currentTimeZoneLabel;
-    @FXML
-    public Label currentLocalTimeLabel;
-    @FXML
-    private BorderPane mainUIBorderPane;
-    @FXML
-    private VBox sideMenuVBox;
-    @FXML
-    private Button customerViewMenuButton;
-    @FXML
-    private Button appointmentViewMenuButton;
-    @FXML
-    private Button reportViewMenuButton;
-    @FXML
-    private Button logoutMenuButton;
-    @FXML
-    private Button menuControlButton;
 
-    //Appointment view
-    GridPane appointmentFormView;
+    //Resource bundle for language
+    public ResourceBundle resourceBundle;
 
     //Store the selected customer for updating and deleting
     private  Customer selectedCustomer;
-
-    //Store the primary stage of the application
-    public static Stage primaryStage;
 
     //Create confirmation alert
     Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
 
     //Create error alert
     public static Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-
-    //Store Current User and allow access in all controllers
-    public static User currentUser;
 
     //Retrieve customers and divisions from database to provide a more responsive UI
     private ObservableList<Customer> allCustomers = FXCollections.observableArrayList(Database.getAllCustomers());
@@ -115,10 +103,45 @@ public class CustomerFormController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        setUserLanguage();
         setCellFactories();
         setEventListeners();
         customerCountryComboBox.setItems(Database.getAllCountries());
         customerDataTable.setItems(allCustomers);
+    }
+
+    public void setUserLanguage(){
+        resourceBundle = ResourceBundle.getBundle("resources.CustomerForm", Locale.getDefault());
+
+        //Set form labels
+        customerIDLabel.setText(resourceBundle.getString("customerIDFieldLabel"));
+        customerNameLabel.setText(resourceBundle.getString("nameFieldLabel"));
+        customerAddressLabel.setText(resourceBundle.getString("addressFieldLabel"));
+        customerPostalCodeLabel.setText(resourceBundle.getString("postalCodeFieldLabel"));
+        customerPhoneLabel.setText(resourceBundle.getString("phoneFieldLabel"));
+        customerCountryLabel.setText(resourceBundle.getString("countryComboLabel"));
+        customerDivisionLabel.setText(resourceBundle.getString("firstLevelDivisionComboLabel"));
+
+        //Set form values
+        customerIDTextField.setText(resourceBundle.getString("customerIDDefault"));
+        customerCountryComboBox.setPromptText(resourceBundle.getString("countryComboPrompt"));
+
+        //Set button labels
+        customerSaveButton.setText(resourceBundle.getString("addCustomerButtonLabel"));
+        customerDeleteButton.setText(resourceBundle.getString("deleteCustomerButtonLabel"));
+        customerUpdateButton.setText(resourceBundle.getString("updateCustomerButtonLabel"));
+
+        //Set table columns
+        customerIDColumn.setText(resourceBundle.getString("customerIDFieldLabel"));
+        customerNameColumn.setText(resourceBundle.getString("nameFieldLabel"));
+        customerAddressColumn.setText(resourceBundle.getString("addressFieldLabel"));
+        customerPostalCodeColumn.setText(resourceBundle.getString("postalCodeFieldLabel"));
+        customerPhoneColumn.setText(resourceBundle.getString("phoneFieldLabel"));
+        customerCountryColumn.setText(resourceBundle.getString("countryComboLabel"));
+        customerDivisionColumn.setText(resourceBundle.getString("customerTableDivisionColumn"));
+
+        //Set table placeholder
+        customerTablePlaceholder.setText(resourceBundle.getString("customerTablePlaceholder"));
     }
 
     /**
@@ -146,7 +169,7 @@ public class CustomerFormController implements Initializable {
                                             customerCountryComboBox.getValue(), id);
 
             //Add new customer to database
-            Database.addCustomer(customer, currentUser);
+            Database.addCustomer(customer, AppointmentFormController.currentUser);
 
             //Add customer to table
             allCustomers.add(customer);
@@ -202,7 +225,7 @@ public class CustomerFormController implements Initializable {
         allCustomers.set(customerDataTable.getSelectionModel().getSelectedIndex(), selectedCustomer);
 
         //Update the customer in the database
-        Database.updateCustomer(selectedCustomer, currentUser);
+        Database.updateCustomer(selectedCustomer, AppointmentFormController.currentUser);
 
         //Reset the customer form to default values
         resetCustomerForm();
@@ -213,79 +236,23 @@ public class CustomerFormController implements Initializable {
     /**Create event handlers for UI events*/
     private void setEventListeners(){
 
-        //Open customer view
-        customerViewMenuButton.setOnAction(actionEvent -> {
-            formLabel.setText("Manage Customers");
-           contentBorderPane.setCenter(customerFormGridPane);
-        });
-
-        //Open appointment view
-        appointmentViewMenuButton.setOnAction(actionEvent -> {
-            formLabel.setText("Manage Appointments");
-            try {
-                appointmentFormView = FXMLLoader.load(getClass().getResource("../view/AppointmentFormView.fxml"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            contentBorderPane.setCenter(appointmentFormView);
-        });
-
-        //Return the user to the login screen
-        logoutMenuButton.setOnAction(actionEvent -> {
-            //Confirm the user wants to logout
-            confirmationAlert.setContentText("Are you sure you want to logout of the application?");
-            confirmationAlert.showAndWait().ifPresent(response ->{
-                if(response.equals(ButtonType.OK)){
-                    //Get resources from the fxml
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("../view/LoginFormView.fxml"));
-                    Parent root = null;
-                    try {
-                        root = loader.load();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    //Get the login form controller and pass the stage to it
-                    LoginFormController controller = loader.getController();
-                    controller.setPrimaryStage(primaryStage);
-
-                    //Create the scene and apply stylesheet
-                    assert root != null;
-                    Scene loginForm = new Scene(root, 600, 250);
-                    URL stylesheetURL = getClass().getResource("../resources/AppointmentApp.css");
-                    loginForm.getStylesheets().add(stylesheetURL.toExternalForm());
-
-                    //Set the stage properties and display
-                    primaryStage.setTitle("Software 2 Scheduling Application");
-                    primaryStage.setScene(loginForm);
-                    primaryStage.setResizable(false);
-                    primaryStage.show();
-                }
-            });
-        });
-
-        //Show or Hide menu when menuControlButton is clicked
-        menuControlButton.setOnAction(actionEvent -> {
-            if (mainUIBorderPane.getLeft() != null){
-                mainUIBorderPane.setLeft(null);
-                menuControlButton.setText("Show Menu");
-            } else {
-                mainUIBorderPane.setLeft(sideMenuVBox);
-                menuControlButton.setText("Hide Menu");
-            }
-        });
-
         //Filter the and enable the dvision combo box when the user selects a country
         customerCountryComboBox.setOnAction(actionEvent -> {
 
             //Check for country selection and set divisions accordingly
-            if (customerCountryComboBox.getValue().equals("U.S")){
-                customerDivisionComboBox.setItems(usDivisions);
-            } else if (customerCountryComboBox.getValue().equals("UK")){
-                customerDivisionComboBox.setItems(ukDivisions);
-            } else if (customerCountryComboBox.getValue().equals("Canada")){
-                customerDivisionComboBox.setItems(canadaDivisions);
+            switch (customerCountryComboBox.getValue()) {
+                case "U.S":
+                    customerDivisionComboBox.setItems(usDivisions);
+                    break;
+                case "UK":
+                    customerDivisionComboBox.setItems(ukDivisions);
+                    break;
+                case "Canada":
+                    customerDivisionComboBox.setItems(canadaDivisions);
+                    break;
             }
+            //Set customer division combo box prompt
+            customerDivisionComboBox.setPromptText(resourceBundle.getString("firstLevelDivisionComboPrompt"));
 
             //Enable the customer division combo box
             customerDivisionComboBox.disableProperty().setValue(false);
@@ -305,7 +272,7 @@ public class CustomerFormController implements Initializable {
 
             //Display error if no customer is selected
             if (customerDataTable.getSelectionModel().getSelectedItem() == null){
-                errorLabel.setText("* Please select a Customer to update");
+                errorLabel.setText(resourceBundle.getString("noCustomerSelectedToUpdate"));
                 errorLabel.setVisible(true);
             } else {
                 errorLabel.setVisible(false);
@@ -314,7 +281,7 @@ public class CustomerFormController implements Initializable {
                 populateFormForUpdate();
 
                 //Set the text and event for the customer save button
-                customerSaveButton.setText("Save Changes");
+                customerSaveButton.setText(resourceBundle.getString("saveCustomerChangesButtonLabel"));
                 customerSaveButton.setOnAction(actionEvent1 -> {
                     try {
                         updateCustomer();
@@ -330,15 +297,15 @@ public class CustomerFormController implements Initializable {
             selectedCustomer = customerDataTable.getSelectionModel().getSelectedItem();
             //Display error if no Customer is selected
             if (selectedCustomer == null){
-                errorLabel.setText("* Please select a Customer to delete");
+                errorLabel.setText(resourceBundle.getString("noCustomerSelectedToDelete"));
                 errorLabel.setVisible(true);
             } else {
                 errorLabel.setVisible(false);
 
                 //Confirm user wants to delete selected customer
-                confirmationAlert.setContentText("Are you sure you want to delete this customer?\n" +
-                                                "Customer ID: " + selectedCustomer.getCustomerID() +
-                                                "\nCustomer Name: " + selectedCustomer.getName());
+                confirmationAlert.setContentText(resourceBundle.getString("deleteCustomerConfirmation") + "\n" +
+                                                resourceBundle.getString("customerIDFieldLabel") + ": " + selectedCustomer.getCustomerID() +
+                                                "\n" + resourceBundle.getString("customerNameConfirmationLabel") + ": " + selectedCustomer.getName());
                 confirmationAlert.showAndWait().ifPresent(deleteCustomerResponse -> {
                     if (deleteCustomerResponse.equals(ButtonType.OK)) {
 
@@ -347,20 +314,30 @@ public class CustomerFormController implements Initializable {
                         if (customerAppointments.size() > 0){
 
                             //Display the appointment information to the user and confirm they want to delete all the appointments with the customer
-                            StringBuilder confirmationContent = new StringBuilder("This customer has the following appointments:\n");
+                            StringBuilder confirmationContent = new StringBuilder(resourceBundle.getString("customerHasAppointmentsConfirmationHeader"));
+                            confirmationContent.append(":\n");
                             for (Appointment appointment : customerAppointments){
-                                confirmationContent.append("\nAppointment ID: ");
+                                confirmationContent.append("\n");
+                                confirmationContent.append(resourceBundle.getString("customerIDFieldLabel"));
+                                confirmationContent.append(": ");
                                 confirmationContent.append(appointment.getAppointmentID());
-                                confirmationContent.append("\nAppointment Title: ");
+                                confirmationContent.append("\n");
+                                confirmationContent.append(resourceBundle.getString("appointmentTitleConfirmationLabel"));
+                                confirmationContent.append(": ");
                                 confirmationContent.append(appointment.getTitle());
-                                confirmationContent.append("\nTimeslot: ");
+                                confirmationContent.append("\n");
+                                confirmationContent.append(resourceBundle.getString("timeslotConfirmationLabel"));
+                                confirmationContent.append(": ");
                                 confirmationContent.append(LocalDateTime.of(appointment.getStartDate(), appointment.getStartTime()).format(DateTimeFormatter.ofPattern("MM-dd-yyyy 'at' HH:mm")));
-                                confirmationContent.append(" to ");
+                                confirmationContent.append(resourceBundle.getString("toConfirmationLabel"));
                                 confirmationContent.append(LocalDateTime.of(appointment.getEndDate(), appointment.getEndTime()).format(DateTimeFormatter.ofPattern("MM-dd-yyyy 'at' HH:mm")));
                                 confirmationContent.append("\n");
                             }
-                            confirmationContent.append("\nDeleting this customer will delete all associated appointments.\nAre you sure you want to continue?");
+                            confirmationContent.append("\n");
+                            //THIS TEXT CUTS OFF
+                            confirmationContent.append(resourceBundle.getString("customerHasAppointmentsConfirmationFooter"));
                             confirmationAlert.setContentText(String.valueOf(confirmationContent));
+                            confirmationAlert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
                             confirmationAlert.showAndWait().ifPresent(deleteCustomerAppointmentsResponse ->{
                                 if (deleteCustomerAppointmentsResponse.equals(ButtonType.OK)){
 
@@ -397,8 +374,8 @@ public class CustomerFormController implements Initializable {
 
     /**Reset the customer form to default values*/
     private void resetCustomerForm(){
-        customerSaveButton.setText("Add Customer");
-        customerIDTextField.setText("ID is Auto-Generated");
+        customerSaveButton.setText(resourceBundle.getString("addCustomerButtonLabel"));
+        customerIDTextField.setText(resourceBundle.getString("customerIDDefault"));
         customerNameTextField.clear();
         customerAddressTextField.clear();
         customerPostalCodeTextField.clear();

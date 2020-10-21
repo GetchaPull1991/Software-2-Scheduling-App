@@ -49,6 +49,7 @@
 .table-view{
     -fx-border-width: 1px;
     -fx-border-color: #9f47fc;
+    /*-fx-border-color: transparent;*/
     -fx-border-radius: 10px;
     -fx-background-radius: 10px 10px 10px 10px;
     -fx-focus-color: transparent;
@@ -61,6 +62,66 @@
 
 .table-view .column-header {
     -fx-background-color: transparent;
+}
+
+#loginLabelVBox {
+    -fx-background-color: #a903fc;
+}
+
+.loginLabel {
+        -fx-font-size: 14px;
+        -fx-text-fill: #ffffff;
+        -fx-font-weight: bold;
+}
+
+/*
+.table-row-cell {
+    -fx-background-radius: 10px, 10px, 10px, 10px;
+    -fx-border-width: 0.2px;
+    -fx-border-color: black;
+    -fx-background-color: transparent;
+}
+
+
+
+VBox {
+    -fx-border-color: black;
+    -fx-border-width: 0.5px;
+}
+
+
+HBox {
+    -fx-border-color: red;
+    -fx-border-width: 0.5px;
+}
+
+BorderPane {
+        -fx-border-color: green;
+        -fx-border-width: 0.5px;
+}
+*/
+
+#legendVbox {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10px;
+}
+
+#overdueLabel {
+        -fx-font-size: 14px;
+        -fx-text-fill: #fc3426;
+        -fx-font-weight: bold;
+}
+
+#nextHourLabel {
+        -fx-font-size: 14px;
+        -fx-text-fill: #fce803;
+        -fx-font-weight: bold;
+}
+
+#appointmentTodayLabel {
+        -fx-font-size: 14px;
+        -fx-text-fill: #00db16;
+        -fx-font-weight: bold;
 }
 
 
