@@ -13,6 +13,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
+
         //TESTING
         Locale.setDefault(Locale.FRANCE);
 
@@ -25,7 +26,7 @@ public class Main extends Application {
         controller.setPrimaryStage(primaryStage);
 
         //Create the scene and apply stylesheet
-        Scene loginForm = new Scene(root, 500, 250);
+        Scene loginForm = new Scene(root, 500, 225);
         URL stylesheetURL = getClass().getResource("../resources/AppointmentApp.css");
         loginForm.getStylesheets().add(stylesheetURL.toExternalForm());
 

@@ -49,7 +49,6 @@
                 <ComboBox fx:id="customerComboBox" disable="true"/>
         </HBox>
         <HBox>
-            <Label fx:id="errorLabel" styleClass="errorLabel" visible="false"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="generateReportButton" text="Generate Report"/>
         </HBox>
@@ -74,4 +73,7 @@
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
         </columnResizePolicy>
     </TableView>
+    <HBox>
+        <Label fx:id="errorLabel" styleClass="errorLabel" visible="false"/>
+    </HBox>
 </VBox>

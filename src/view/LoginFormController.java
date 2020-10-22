@@ -49,8 +49,8 @@ public class LoginFormController implements Initializable {
     //Display confirmation to exit application
     Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
 
+    //Resource Bundle for Language Resources
     public ResourceBundle resourceBundle;
-
 
     /**
      * @param stage the stage to set
@@ -59,7 +59,6 @@ public class LoginFormController implements Initializable {
         this.primaryStage = stage;
     }
 
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setUserLanguage();
@@ -67,6 +66,7 @@ public class LoginFormController implements Initializable {
         setEventHandlers();
     }
 
+    /** Set the application language according to users locale*/
     public void setUserLanguage(){
 
         //Get the resource for the users Locale
@@ -79,7 +79,7 @@ public class LoginFormController implements Initializable {
         cancelButton.setText(resourceBundle.getString("cancelButtonLabel"));
     }
 
-    /**Get the users location and display in a form label*/
+    /** Get the users location from the locale and display in a form label*/
     private void getUserLocation(){
 
         //Get the locale of the user machine
@@ -90,17 +90,18 @@ public class LoginFormController implements Initializable {
 
     }
 
-    /**Attempt to login when the login button is pressed
+    /**Attempt to login when the login button pressed
      * @throws IOException if resource cannot be located
      */
     private void attemptLogin() throws IOException {
 
         //Check if input is valid
         if (InputValidator.validateLoginForm(this)){
-            //store username
+
+            //Store User
             User user = Database.getUser(userIDTextField.getText());
 
-            //Open the Customer form
+            //Get the customer form resource
             FXMLLoader loader = new FXMLLoader(getClass().getResource("../view/AppointmentFormView.fxml"));
             Parent root = loader.load();
 
@@ -154,7 +155,7 @@ public class LoginFormController implements Initializable {
             businessClock.play();
 
             //Create customer form scene and link stylesheet
-            Scene appointmentForm = new Scene(root, 1000, 750);
+            Scene appointmentForm = new Scene(root, 1200, 750);
             URL stylesheet = getClass().getResource("../resources/AppointmentApp.css");
             appointmentForm.getStylesheets().add(stylesheet.toExternalForm());
 
@@ -162,18 +163,14 @@ public class LoginFormController implements Initializable {
             Stage stage = new Stage();
             stage.setScene(appointmentForm);
             stage.setResizable(true);
+            stage.setTitle(resourceBundle.getString("windowTitle"));
             stage.show();
             primaryStage.close();
-
-
-/*            primaryStage.setScene(appointmentForm);
-            primaryStage.setResizable(true);
-            primaryStage.show();*/
         }
-
     }
 
     /**
+     * Record the login attempt of the user
      * @param userID the userID to record who attempted to login
      * @param loginIsValid the result of the login to record if it was successful
      */
@@ -194,10 +191,12 @@ public class LoginFormController implements Initializable {
         } catch (IOException e){
             e.printStackTrace();
         }
-
     }
 
-    /**Set the event handlers for the LoginFormView*/
+    /** Set the event handlers for the LoginFormView
+     *  Lambdas used for action event handlers to avoid instantiating Action Event Objects
+     *  Lambdas used for key event handlers to avoid instantiating Key Event Objects
+     * */
     private void setEventHandlers(){
 
         //Attempt to login when the login button is pressed
@@ -211,6 +210,7 @@ public class LoginFormController implements Initializable {
 
         //Close the application when the cancel button is pressed
         cancelButton.setOnAction(actionEvent -> {
+
             //Confirm the user wants to close the application
             confirmationAlert.setContentText(resourceBundle.getString("exitConfirmationMessage"));
             confirmationAlert.showAndWait().ifPresent(response ->{

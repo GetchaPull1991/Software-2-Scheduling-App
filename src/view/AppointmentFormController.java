@@ -6,19 +6,16 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.*;
-
 import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
@@ -210,13 +207,11 @@ public class AppointmentFormController implements Initializable {
     @FXML
     public Label appointmentTodayLabel;
 
-
     //Store Customer form view
     GridPane customerFormView;
 
     //Store the report view
     VBox reportView;
-
 
     //Store Current User and allow access in all controllers
     public static User currentUser;
@@ -227,10 +222,6 @@ public class AppointmentFormController implements Initializable {
     //Resource bundle for language
     public ResourceBundle resourceBundle;
 
-    //Retrieve the appointments from the database
-    public static ObservableList<Appointment> allAppointments = FXCollections.observableArrayList(Database.getAllAppointments());
-    public ObservableList<Appointment> weeklyAppointments = FXCollections.observableArrayList(Database.getWeekAppointments());
-    public ObservableList<Appointment> monthlyAppointments = FXCollections.observableArrayList(Database.getMonthAppointments());
 
     //Information alert
     Alert informationAlert = new Alert(Alert.AlertType.INFORMATION);
@@ -254,7 +245,6 @@ public class AppointmentFormController implements Initializable {
     ObservableList<String> startTimes = FXCollections.observableArrayList();
     ObservableList<String> endTimes = FXCollections.observableArrayList();
 
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setUserLanguage();
@@ -265,18 +255,18 @@ public class AppointmentFormController implements Initializable {
         setCellFactories();
         setTableData();
 
-        //Check for upcoming appointments after the scene has been shown
+        //Check for upcoming appointments after the scene has been shown with method reference
         Platform.runLater(this::checkUpcomingAppointments);
     }
 
-    /**Populate the tables with data*/
+    /** Populate the tables with data*/
     private void setTableData(){
-        allAppointmentDataTable.setItems(allAppointments);
-        monthlyAppointmentDataTable.setItems(monthlyAppointments);
-        weeklyAppointmentDataTable.setItems(weeklyAppointments);
+        allAppointmentDataTable.setItems(Database.getAllAppointments());
+        monthlyAppointmentDataTable.setItems(Database.getMonthAppointments());
+        weeklyAppointmentDataTable.setItems(Database.getWeekAppointments());
     }
 
-    /**Set the application language according to the users locale*/
+    /** Set the application language according to the users locale*/
     private void setUserLanguage(){
 
         //Get resource bundle
@@ -368,11 +358,9 @@ public class AppointmentFormController implements Initializable {
         dateHourMinuteFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy '"+ resourceBundle.getString("atLabel") + "' hh:mm");
     }
 
-    /**
-     * Add appointment to table and database
-     * @throws ParseException if date cannot be parsed
-     */
-    private void addAppointment() throws ParseException {
+    /** Add appointment to table and database*/
+    private void addAppointment(){
+
         //Check if user input is valid
         if (InputValidator.validateAppointmentForm(this)){
 
@@ -383,66 +371,46 @@ public class AppointmentFormController implements Initializable {
                 id = random.nextInt();
             }
 
-            //Create new appointment
+            //Get english resource bundle
+            ResourceBundle resourceBundleEn = ResourceBundle.getBundle("resources.AppointmentForm", Locale.US);
+            ObservableList<String> typesInEnglish = FXCollections.observableArrayList(resourceBundleEn.getString("debriefType"),
+                                                                                    resourceBundleEn.getString("newCustomerType"),
+                                                                                    resourceBundleEn.getString("salesInformationType"),
+                                                                                    resourceBundleEn.getString("productDesignType"));
+
+            /*
+            Create new appointment
+            Types converted to english for database storage
+             */
             Appointment appointment = new Appointment(appointmentContactComboBox.getValue(),
                                                     id,
                                                     appointmentTitleTextField.getText(),
                                                     appointmentDescriptionTextArea.getText(),
                                                     appointmentLocationTextField.getText(),
-                                                    appointmentTypeComboBox.getValue(),
+                                                    typesInEnglish.get(appointmentTypeComboBox.getSelectionModel().getSelectedIndex()),
                                                     appointmentStartDatepicker.getValue(),
                                                     convertStringToLocalTime(startTimeComboBox.getValue()),
                                                     appointmentEndDatepicker.getValue(),
                                                     convertStringToLocalTime(endTimeComboBox.getValue()),
                                                     Integer.parseInt(appointmentCustomerIDComboBox.getValue()), currentUser.getUserName());
 
+            //Reset the appointment form
             resetAppointmentForm();
 
             //Add new appointment to database
             Database.addAppointment(appointment, currentUser);
 
-            allAppointmentDataTable.setItems(Database.getAllAppointments());
-            weeklyAppointmentDataTable.setItems(Database.getWeekAppointments());
-            monthlyAppointmentDataTable.setItems(Database.getMonthAppointments());
+            //Update the appointment tables
+            setTableData();
 
         }
     }
 
-    /**Populate the appointment form with appointment information for updating*/
-    private void populateFormForUpdate() {
-
-        //Disable table
-        appointmentTabPane.disableProperty().setValue(true);
-
-        //Check if the monthly or weekly tab is open
-        if (appointmentTabPane.getSelectionModel().getSelectedItem().equals(monthlyTab)){
-            selectedAppointment = monthlyAppointmentDataTable.getSelectionModel().getSelectedItem();
-        } else if (appointmentTabPane.getSelectionModel().getSelectedItem().equals(monthlyTab)) {
-            selectedAppointment = weeklyAppointmentDataTable.getSelectionModel().getSelectedItem();
-        } else {
-            selectedAppointment = allAppointmentDataTable.getSelectionModel().getSelectedItem();
-        }
-
-
-        //Check if selected appointment is null
-        //Populate fields with selected appointment data
-        if (selectedAppointment != null) {
-            appointmentIDTextField.setText(Integer.toString(selectedAppointment.getAppointmentID()));
-            appointmentContactComboBox.getSelectionModel().select(selectedAppointment.getContactName());
-            appointmentCustomerIDComboBox.getSelectionModel().select(Integer.toString(selectedAppointment.getCustomerID()));
-            appointmentTitleTextField.setText(selectedAppointment.getTitle());
-            appointmentLocationTextField.setText(selectedAppointment.getLocation());
-            appointmentTypeComboBox.getSelectionModel().select(selectedAppointment.getType());
-            appointmentStartDatepicker.setValue(selectedAppointment.getStartDate());
-            startTimeComboBox.getSelectionModel().select(selectedAppointment.getStartTime().format(hourMinuteFormatter));
-            appointmentEndDatepicker.setValue(selectedAppointment.getEndDate());
-            endTimeComboBox.getSelectionModel().select(selectedAppointment.getEndTime().format(hourMinuteFormatter));
-            appointmentDescriptionTextArea.setText(selectedAppointment.getDescription());
-        }
-    }
-
-    /**Update a selected appointment*/
+    /** Update a selected appointment*/
     private void updateAppointment() throws ParseException {
+
+        //Re-enable tab pane
+        appointmentTabPane.setDisable(false);
 
         //Update appointment information
         selectedAppointment.setContactName(appointmentContactComboBox.getValue());
@@ -459,31 +427,20 @@ public class AppointmentFormController implements Initializable {
         selectedAppointment.setEndDate(appointmentEndDatepicker.getValue());
         selectedAppointment.setEndTime(convertStringToLocalTime(endTimeComboBox.getValue()));
 
-        //Update appointment in all appointments table
-        allAppointments.set(allAppointmentDataTable.getSelectionModel().getSelectedIndex(), selectedAppointment);
-
-        //Update weekly appointment
-        if (weeklyAppointmentDataTable.getItems().contains(selectedAppointment)){
-            weeklyAppointmentDataTable.getSelectionModel().select(selectedAppointment);
-            weeklyAppointments.set(weeklyAppointmentDataTable.getSelectionModel().getSelectedIndex(), selectedAppointment);
-            weeklyAppointmentDataTable.getSelectionModel().clearSelection();
-        }
-
-        //Update monthly appointment
-        if (monthlyAppointmentDataTable.getItems().contains(selectedAppointment)){
-            monthlyAppointmentDataTable.getSelectionModel().select(selectedAppointment);
-            monthlyAppointments.set(weeklyAppointmentDataTable.getSelectionModel().getSelectedIndex(), selectedAppointment);
-            monthlyAppointmentDataTable.getSelectionModel().clearSelection();
-        }
 
         //Update appointment in database
-        Database.updateAppontment(selectedAppointment, currentUser);
+        Database.updateAppointment(selectedAppointment, currentUser);
 
         //Reset form
         resetAppointmentForm();
+
+        //Update the appointment tables
+        setTableData();
     }
 
-    /**Delete appointment from table and database*/
+    /** Delete appointment from table and database
+     *  Lambda used to handle the alert response without initializing ButtonType
+     * */
     private void deleteAppointment(){
 
         //Check if the monthly or weekly tab is open
@@ -495,71 +452,54 @@ public class AppointmentFormController implements Initializable {
             selectedAppointment = allAppointmentDataTable.getSelectionModel().getSelectedItem();
         }
 
-        //Check if a selection was made
+        //Check if a selection made
         if (selectedAppointment != null) {
+
             //Set custom confirmation alert with Appointment ID and Appointment Type
             confirmationAlert.setContentText(resourceBundle.getString("deleteAppointmentConfirmationMessage") +
                                             "\n" + resourceBundle.getString("appointmentIDFieldLabel") + ": " + selectedAppointment.getAppointmentID() +
                                             "\n" + resourceBundle.getString("typeFieldLabel") + ": " + selectedAppointment.getType());
-            //Display confirmation alert
+
+            //Set confirmation title and header
+            confirmationAlert.setTitle(resourceBundle.getString("deleteAppointmentConfirmationHeader"));
+            confirmationAlert.setHeaderText(resourceBundle.getString("deleteAppointmentConfirmationHeader"));
+
+            //Wait for user response
             confirmationAlert.showAndWait().ifPresent(response ->{
                 if (response.equals(ButtonType.OK)){
 
-                    //TRIED REMOVING FROM EACH LIST, SELECTED APPOINT IS REMOVED FROM ALL BUT NOT FROM MONTH AND WEEK
                     //Remove appointment from database
                     Database.removeAppointment(selectedAppointment);
-                    allAppointmentDataTable.setItems(Database.getAllAppointments());
-                    weeklyAppointmentDataTable.setItems(Database.getWeekAppointments());
-                    monthlyAppointmentDataTable.setItems(Database.getMonthAppointments());
+
+                    //Update tables
+                    setTableData();
                 }
             });
         } else {
-            //If no selection is made, display error in UI
+
+            //If no selection made, display error in UI
             errorLabel.setText(resourceBundle.getString("noAppointmentToDeleteError"));
         }
     }
 
-    /**Reset the appointment form to default values*/
-    private void resetAppointmentForm(){
 
-        //Reset fields
-        appointmentIDTextField.setText(resourceBundle.getString("appointmentIDFieldDefault"));
-        appointmentContactComboBox.getSelectionModel().clearSelection();
-        appointmentCustomerIDComboBox.getSelectionModel().clearSelection();
-        appointmentTitleTextField.clear();
-        appointmentLocationTextField.clear();
-        appointmentUserTextField.setText(currentUser.getUserName());
-        appointmentTypeComboBox.getSelectionModel().clearSelection();
-        appointmentStartDatepicker.setValue(null);
-        startTimeComboBox.getSelectionModel().clearSelection();
-        startTimeComboBox.setDisable(true);
-        appointmentEndDatepicker.setValue(null);
-        appointmentEndDatepicker.setDisable(true);
-        endTimeComboBox.getSelectionModel().clearSelection();
-        endTimeComboBox.setDisable(true);
-        appointmentDescriptionTextArea.clear();
-
-        //Reset add appointment button
-        addAppointmentButton.setText(resourceBundle.getString("addAppointmentButtonLabel"));
-        addAppointmentButton.setOnAction(actionEvent -> {
-            try {
-                addAppointment();
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        });
-
-        //Enable the tab pane
-        appointmentTabPane.disableProperty().setValue(false);
-    }
-
-    /**Check for appointments scheduled within 15 minutes of the current time and alert the user*/
+    /** Check for appointments scheduled within 15 minutes of the current time and alert the user*/
     private void checkUpcomingAppointments(){
-        //Get any appointments within 15 minutes from the database
-        Appointment upcomingAppointment = Database.getAppointmentsWithin15Min();
+
+        //Get any appointments within 15 minutes
+        Appointment upcomingAppointment = Database.getAppointmentWithin15Min();
+
+        //Set information alert title and header
+        informationAlert.setHeaderText(resourceBundle.getString("upcomingAppointmentInfoHeader"));
+        informationAlert.setTitle(resourceBundle.getString("upcomingAppointmentInfoHeader"));
 
         //If there are any appointments
         if (upcomingAppointment != null){
+
+            LocalDateTime startTime;
+            LocalDateTime endTime;
+
+
 
             //Display an information alert containing the appointment information
             informationAlert.setContentText(
@@ -570,16 +510,21 @@ public class AppointmentFormController implements Initializable {
                              LocalDateTime.of(upcomingAppointment.getStartDate(), upcomingAppointment.getStartTime()).format(dateHourMinuteFormatter) +
                             resourceBundle.getString("untilLabel") +
                             LocalDateTime.of(upcomingAppointment.getEndDate(), upcomingAppointment.getEndTime()).format(dateHourMinuteFormatter));
+
         } else {
             //If there are no appointments within fifteen minutes display information alert indicating this
             informationAlert.setContentText(resourceBundle.getString("noUpcomingAppointmentsInfoMessage"));
             informationAlert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
         }
-        //Show info alert
+        //Wait for user response
         informationAlert.showAndWait();
     }
 
-    /**Set cell factories for appointment data table*/
+    /** Set cell factories for appointment data table
+     * Lambdas used for row factories to avoid instantiating Table Row Objects
+     * Lambdas used for cell factories to avoid instantiating Table Cell Objects
+     * Lambdas used for day cell factories to avoid instantiating Date Cell Objects
+     */
     private void setCellFactories(){
         /*
         Monthly Appointment Table
@@ -928,39 +873,61 @@ public class AppointmentFormController implements Initializable {
                 LocalDate today = LocalDate.now();
 
                 /*
-                Disable cells that are before the current day,
-                After 5pm/1700 of the current day,
-                On a weekend
+                Disable cells that are before the current day or
+                after 10pm/2300 of the current day
                  */
                 setDisable(empty || date.compareTo(today) < 0
-                                || LocalDateTime.of(date, LocalTime.of(22, 0 )).compareTo(LocalDateTime.now()) < 0
-                                /*|| date.getDayOfWeek().equals(DayOfWeek.SATURDAY) || date.getDayOfWeek().equals(DayOfWeek.SUNDAY)*/);
+                                || LocalDateTime.of(date, LocalTime.of(22, 0 )).compareTo(LocalDateTime.now()) < 0);
             }
         });
     }
 
-    /**Set the event listeners*/
+    /** Set the event listeners
+     *  Lambdas used for action events to avoid instantiating Action Event Objects
+     *  Lambdas used for alert response to avoid instantiating Button Type Objects
+     * */
     private void setEventListeners(){
 
         /*
         Handle appointment changes
          */
         //Add new appointment
-        addAppointmentButton.setOnAction(actionEvent -> {
-            try {
-                addAppointment();
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        });
+        addAppointmentButton.setOnAction(actionEvent -> addAppointment());
 
         //Cancel appointment
-        appointmentDeleteButton.setOnAction(actionEvent -> deleteAppointment());
+        appointmentDeleteButton.setOnAction(actionEvent -> {
+
+            //Check Which tab selected in the tab pane
+            if (appointmentTabPane.getSelectionModel().getSelectedItem().equals(monthlyTab)){
+
+                //Get the monthly appointment table selection
+                selectedAppointment = monthlyAppointmentDataTable.getSelectionModel().getSelectedItem();
+            } else if (appointmentTabPane.getSelectionModel().getSelectedItem().equals(weeklyTab)){
+
+                //Get the weekly appointment table selection
+                selectedAppointment = weeklyAppointmentDataTable.getSelectionModel().getSelectedItem();
+            } else {
+
+                //Get the all appointment table selection
+                selectedAppointment = allAppointmentDataTable.getSelectionModel().getSelectedItem();
+            }
+
+            //Display an error if no appointment selected
+            if (selectedAppointment == null){
+                errorLabel.setText(resourceBundle.getString("noAppointmentToDeleteError"));
+                errorLabel.setVisible(true);
+            } else {
+                //Hide error label
+                errorLabel.setVisible(false);
+
+                //Delete the appointment
+                deleteAppointment();
+        }});
 
         //Update appointment
         appointmentUpdateButton.setOnAction(actionEvent -> {
 
-            //Check Which tab is selcted in the tab pane
+            //Check Which tab selected in the tab pane
             if (appointmentTabPane.getSelectionModel().getSelectedItem().equals(monthlyTab)){
 
                 //Get the monthly appointment table selection
@@ -980,6 +947,7 @@ public class AppointmentFormController implements Initializable {
                 errorLabel.setText(resourceBundle.getString("noAppointmentToUpdateError"));
                 errorLabel.setVisible(true);
             } else {
+                //Hide error label
                 errorLabel.setVisible(false);
 
                 //Populate the form with the selected Appointment information
@@ -989,7 +957,10 @@ public class AppointmentFormController implements Initializable {
                 addAppointmentButton.setText(resourceBundle.getString("saveChangesButtonLabel"));
                 addAppointmentButton.setOnAction(actionEvent1 -> {
                     try {
-                        updateAppointment();
+                        //Validate the user input
+                        if (InputValidator.validateAppointmentForm(this)) {
+                            updateAppointment();
+                        }
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
@@ -1001,13 +972,14 @@ public class AppointmentFormController implements Initializable {
         Handle View Changes
          */
 
-        //Open customer view
+        //Open appointment view
         appointmentViewMenuButton.setOnAction(actionEvent -> {
             formLabel.setText(resourceBundle.getString("formLabelAppointments"));
             contentBorderPane.setCenter(appointmentFormGridPane);
+            setTableData();
         });
 
-        //Open appointment view
+        //Open customer view
         customerViewMenuButton.setOnAction(actionEvent -> {
             formLabel.setText(resourceBundle.getString("formLabelCustomer"));
             try {
@@ -1038,6 +1010,12 @@ public class AppointmentFormController implements Initializable {
 
             //Confirm the user wants to logout
             confirmationAlert.setContentText(resourceBundle.getString("logoutConfirmationMessage"));
+
+            //Set the confirmation alert title and header
+            confirmationAlert.setHeaderText(resourceBundle.getString("logoutConfirmationHeader"));
+            confirmationAlert.setTitle(resourceBundle.getString("logoutConfirmationHeader"));
+
+            //Wait for user response
             confirmationAlert.showAndWait().ifPresent(response ->{
                 if(response.equals(ButtonType.OK)){
 
@@ -1065,6 +1043,8 @@ public class AppointmentFormController implements Initializable {
                     primaryStage.setScene(loginForm);
                     primaryStage.setResizable(false);
                     Stage stage = (Stage) logoutMenuButton.getScene().getWindow();
+
+                    //Close the current stage and show the primary stage
                     stage.close();
                     primaryStage.show();
                 }
@@ -1086,8 +1066,6 @@ public class AppointmentFormController implements Initializable {
             }
         });
 
-
-
         /*
         Handle Date and Time Fields
          */
@@ -1106,8 +1084,8 @@ public class AppointmentFormController implements Initializable {
                     public void updateItem(LocalDate date, boolean empty){
                         super.updateItem(date, empty);
 
-                        //Disable day cells on weekends
-                        setDisable(empty /*|| date.getDayOfWeek().equals(DayOfWeek.SATURDAY) || date.getDayOfWeek().equals(DayOfWeek.SUNDAY)*/);
+                        //Disable empty cells
+                        setDisable(empty);
 
                         //If there is a start date selection, disable day cells before start date
                         if (appointmentStartDatepicker.getValue() != null) {
@@ -1116,7 +1094,7 @@ public class AppointmentFormController implements Initializable {
                     }
                 });
 
-
+                //Store times to be removed
                 ObservableList<String> timesToRemove = FXCollections.observableArrayList();
 
                 //Remove all times from the start times list that are before the current time
@@ -1126,6 +1104,7 @@ public class AppointmentFormController implements Initializable {
                     }
                 }
 
+                //Remove times
                 startTimes.removeAll(timesToRemove);
             }
 
@@ -1140,17 +1119,19 @@ public class AppointmentFormController implements Initializable {
                 startTimeComboBox.setDisable(false);
             }
 
+            //Disable end date and end time if start date changed
             appointmentEndDatepicker.setDisable(true);
+            endTimeComboBox.getSelectionModel().clearSelection();
             endTimeComboBox.setDisable(true);
 
         });
 
-        //Enable end datepicker when a selection is made in start time combo box
+        //Enable end date picker when a selection made in start time combo box
         startTimeComboBox.setOnAction(actionEvent -> {
             appointmentEndDatepicker.setDisable(false);
 
             /*
-            If there is a selection in the appointment end datepicker when the start time is changed
+            If there is a selection in the appointment end date picker when the start time changed
             the end date picker and end time combo box will be cleared
              */
             if (appointmentEndDatepicker.getValue() != null){
@@ -1167,18 +1148,23 @@ public class AppointmentFormController implements Initializable {
             //Repopulate end times
             populateEndTimes();
 
+            //Times to be removed
             ObservableList<String> timesToRemove = FXCollections.observableArrayList();
 
             //Add any times from the combo box that are before the start time plus 15 minutes to the remove list
             if (appointmentEndDatepicker.getValue() != null ) {
                 for (String time : endTimeComboBox.getItems()) {
                     if (LocalDateTime.of(appointmentEndDatepicker.getValue(), convertStringToLocalTime(time))
-                            .isBefore(LocalDateTime.of(appointmentStartDatepicker.getValue(), convertStringToLocalTime(startTimeComboBox.getValue()).plusMinutes(15)))) {
+                            .isBefore(LocalDateTime.of(appointmentStartDatepicker.getValue(), convertStringToLocalTime(startTimeComboBox.getValue()).plusMinutes(15)))
+                            ||
+                            LocalDateTime.of(appointmentEndDatepicker.getValue(), convertStringToLocalTime(time))
+                                    .isBefore(LocalDateTime.now())){
                         timesToRemove.add(time);
                     }
                 }
             }
 
+            //Remove times
             endTimes.removeAll(timesToRemove);
 
             //If there are no times available for the current date, display prompt and disable end time combo box
@@ -1194,7 +1180,68 @@ public class AppointmentFormController implements Initializable {
         });
     }
 
-    /**Populate all the combo boxes in the view*/
+    /** Reset the appointment form to default values*/
+    private void resetAppointmentForm(){
+
+        //Reset fields
+        startTimeComboBox.getSelectionModel().clearSelection();
+        endTimeComboBox.getSelectionModel().clearSelection();
+        appointmentIDTextField.setText(resourceBundle.getString("appointmentIDFieldDefault"));
+        appointmentContactComboBox.getSelectionModel().clearSelection();
+        appointmentCustomerIDComboBox.getSelectionModel().clearSelection();
+        appointmentTitleTextField.clear();
+        appointmentLocationTextField.clear();
+        appointmentUserTextField.setText(currentUser.getUserName());
+        appointmentTypeComboBox.getSelectionModel().clearSelection();
+        appointmentStartDatepicker.setValue(null);
+        startTimeComboBox.setDisable(true);
+        appointmentEndDatepicker.setValue(null);
+        appointmentEndDatepicker.setDisable(true);
+        endTimeComboBox.setDisable(true);
+        appointmentDescriptionTextArea.clear();
+
+        //Reset add appointment button
+        addAppointmentButton.setText(resourceBundle.getString("addAppointmentButtonLabel"));
+        addAppointmentButton.setOnAction(actionEvent -> addAppointment());
+
+        //Enable the tab pane
+        appointmentTabPane.disableProperty().setValue(false);
+    }
+
+    /** Populate the appointment form with appointment information for updating*/
+    private void populateFormForUpdate() {
+
+        //Check if the monthly or weekly tab is open
+        if (appointmentTabPane.getSelectionModel().getSelectedItem().equals(monthlyTab)){
+            selectedAppointment = monthlyAppointmentDataTable.getSelectionModel().getSelectedItem();
+        } else if (appointmentTabPane.getSelectionModel().getSelectedItem().equals(monthlyTab)) {
+            selectedAppointment = weeklyAppointmentDataTable.getSelectionModel().getSelectedItem();
+        } else {
+            selectedAppointment = allAppointmentDataTable.getSelectionModel().getSelectedItem();
+        }
+
+
+        //Check if selected appointment is null
+        //Populate fields with selected appointment data
+        if (selectedAppointment != null) {
+            appointmentIDTextField.setText(Integer.toString(selectedAppointment.getAppointmentID()));
+            appointmentContactComboBox.getSelectionModel().select(selectedAppointment.getContactName());
+            appointmentCustomerIDComboBox.getSelectionModel().select(Integer.toString(selectedAppointment.getCustomerID()));
+            appointmentTitleTextField.setText(selectedAppointment.getTitle());
+            appointmentLocationTextField.setText(selectedAppointment.getLocation());
+            appointmentTypeComboBox.getSelectionModel().select(selectedAppointment.getType());
+            appointmentStartDatepicker.setValue(selectedAppointment.getStartDate());
+            startTimeComboBox.getSelectionModel().select(formatUSTimeString(selectedAppointment.getStartTime()));
+            appointmentEndDatepicker.setValue(selectedAppointment.getEndDate());
+            endTimeComboBox.getSelectionModel().select(formatUSTimeString(selectedAppointment.getEndTime()));
+            appointmentDescriptionTextArea.setText(selectedAppointment.getDescription());
+        }
+
+        //Disable tab pane until update is complete
+        appointmentTabPane.setDisable(true);
+    }
+
+    /** Populate all the combo boxes in the view*/
     private void populateComboBoxes(){
 
         //Populate contacts combo box
@@ -1241,17 +1288,8 @@ public class AppointmentFormController implements Initializable {
         //Populate start times with 15 min slots during business hours
         while (!businessHourStart.equals(businessHourEnd)) {
 
-            //Add am and pm if country is US
-            if (country.equals("US") ) {
-                if (businessHourStart.isBefore(LocalTime.of(13,0))) {
-                    startTimes.add(businessHourStart.format(hourMinuteFormatter) + " AM");
-                } else {
-                    startTimes.add(businessHourStart.format(hourMinuteFormatter) + " PM");
-                }
-
-            } else {
-                startTimes.add(businessHourStart.format(hourMinuteFormatter));
-            }
+            //Add time
+          startTimes.add(formatUSTimeString(businessHourStart));
 
             //Increment start time
             businessHourStart = businessHourStart.plusMinutes(15);
@@ -1275,17 +1313,8 @@ public class AppointmentFormController implements Initializable {
         //Populate start times with 15 min slots during business hours
         while (!businessHourStart.equals(businessHourEnd)) {
 
-            //Add am and pm if country is US
-            if (country.equals("US") ) {
-                if (businessHourStart.isBefore(LocalTime.of(13,0))) {
-                    endTimes.add(businessHourStart.format(hourMinuteFormatter) + " AM");
-                } else {
-                    endTimes.add(businessHourStart.format(hourMinuteFormatter) + " PM");
-                }
-
-            } else {
-                endTimes.add(businessHourStart.format(hourMinuteFormatter));
-            }
+            //Add time
+            endTimes.add(formatUSTimeString(businessHourStart));
 
             //Increment start time
             businessHourStart = businessHourStart.plusMinutes(15);
@@ -1304,4 +1333,29 @@ public class AppointmentFormController implements Initializable {
         return LocalTime.of(Integer.parseInt(time.substring(0, 2)), Integer.parseInt(time.substring(3, 5)));
     }
 
+    /**
+     * Format the time with am and pm if in the us
+     * @param time the time to format
+     * @return the formatted time
+     */
+    private String formatUSTimeString(LocalTime time){
+
+        //Store formatted time
+        String formattedTime;
+
+        //Add am and pm if country is us
+        if (country.equals("US")){
+            if (time.isBefore(LocalTime.of(13,0))){
+                formattedTime = time.format(hourMinuteFormatter) + " AM";
+            } else {
+                formattedTime = time.format(hourMinuteFormatter) + " PM";
+            }
+        } else {
+            //Return original time if other country
+            formattedTime = time.format(hourMinuteFormatter);
+        }
+
+        //Return formatted time
+        return formattedTime;
+    }
 }

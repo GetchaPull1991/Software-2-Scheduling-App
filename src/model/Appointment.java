@@ -1,7 +1,6 @@
 package model;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**Class to create and manage Appointments*/
@@ -26,9 +25,9 @@ public class Appointment {
      * @param description Thge description to set
      * @param location The location to set
      * @param type The type to set
-     * @param startDate The start date to set (Combines with start time)
+     * @param startDate The start date to set
      * @param startTime The start time to set
-     * @param endDate The end date to set (Combines with end time)
+     * @param endDate The end date to set
      * @param endTime The end time to set
      * @param customerID The customer id to set
      */
@@ -48,7 +47,6 @@ public class Appointment {
         this.user = user;
     }
 
-    //Contact name
     /**
      * @return contact name
      */
@@ -63,7 +61,6 @@ public class Appointment {
         this.contactName = contactName;
     }
 
-    //Appointment ID
     /**
      * @return appointment id
      */
@@ -78,7 +75,6 @@ public class Appointment {
         this.appointmentID = appointmentID;
     }
 
-    //Title
     /**
      * @return title
      */
@@ -93,7 +89,6 @@ public class Appointment {
         this.title = title;
     }
 
-    //Description
     /**
      * @return description
      */
@@ -108,7 +103,6 @@ public class Appointment {
         this.description = description;
     }
 
-    //Location
     /**
      * @return location
      */
@@ -123,7 +117,6 @@ public class Appointment {
         this.location = location;
     }
 
-    //Type
     /**
      * @return type
      */
@@ -138,7 +131,6 @@ public class Appointment {
         this.type = type;
     }
 
-    //Start date
     /**
      * @return the start date
      */
@@ -153,7 +145,6 @@ public class Appointment {
         this.startDate = startDate;
     }
 
-    //Start time
     /**
      * @return the start time
      */
@@ -168,7 +159,6 @@ public class Appointment {
         this.startTime = startTime;
     }
 
-    //End date
     /**
      * @return the end time and date
      */
@@ -183,7 +173,6 @@ public class Appointment {
         this.endDate = endDate;
     }
 
-    //End time
     /**
      * @return end time
      */
@@ -198,7 +187,6 @@ public class Appointment {
         this.endTime = endTime;
     }
 
-    //Customer ID
     /**
      * @return customer id
      */

@@ -149,7 +149,6 @@
                             <Button fx:id="addAppointmentButton" text="Add Appointment" alignment="BOTTOM_RIGHT"/>
                         </VBox>
                     </HBox>
-
                 </VBox>
                     <TabPane fx:id="appointmentTabPane" GridPane.rowIndex="1" GridPane.columnSpan="3">
                         <Tab fx:id="allAppointmentsTab" text="All">

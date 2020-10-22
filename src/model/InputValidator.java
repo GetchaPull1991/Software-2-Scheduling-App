@@ -49,6 +49,7 @@ public class InputValidator {
 
        //If tests pass
        } else {
+
            //Remove any error messages
            controller.inputErrorLabel.setText("");
            controller.inputErrorLabel.setVisible(false);
@@ -109,14 +110,20 @@ public class InputValidator {
                     || controller.endTimeComboBox.getValue() == null) {
                 controller.errorLabel.setText(controller.resourceBundle.getString("emptyFieldsError"));
                 controller.errorLabel.setVisible(true);
+
+                //Check if the appointment overlaps another appointment of the same customer
             } else if (Database.customerAppointmentOverlaps(controller.appointmentCustomerIDComboBox.getValue(),
                                                         LocalDateTime.of(controller.appointmentStartDatepicker.getValue(), convertStringToLocalTime(controller.startTimeComboBox.getValue())),
                                                                 LocalDateTime.of(controller.appointmentEndDatepicker.getValue(), convertStringToLocalTime(controller.endTimeComboBox.getValue())))) {
 
+                //Display an error indicating overlapping appointments
                 controller.errorLabel.setText(controller.resourceBundle.getString("overlappingAppointmentError"));
                 controller.errorLabel.setVisible(true);
             } else {
+                //If tests pass
                 isValid = true;
+
+                //Hide error label
                 controller.errorLabel.setVisible(false);
             }
 

@@ -87,7 +87,6 @@ public class ReportViewController implements Initializable {
     //Variable for language resources
     public ResourceBundle resourceBundle;
 
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setEventListeners();
@@ -97,7 +96,7 @@ public class ReportViewController implements Initializable {
         populateComboBoxes();
     }
 
-    /**Set the user language for all text in the view*/
+    /** Set the user language for all text in the view*/
     private void setUserLanguage(){
         //Get the resource for the users Locale
         resourceBundle = ResourceBundle.getBundle("resources.ReportView", Locale.getDefault());
@@ -128,7 +127,7 @@ public class ReportViewController implements Initializable {
 
     }
 
-    /**Creat toggle group for radio buttons*/
+    /** Create toggle group for radio buttons*/
     private void createToggleGroup(){
         ToggleGroup reportSelectionRadioGroup = new ToggleGroup();
         reportTypeMonthRadio.setToggleGroup(reportSelectionRadioGroup);
@@ -138,9 +137,12 @@ public class ReportViewController implements Initializable {
 
     }
 
-    /**Set the event listeners for view*/
+    /** Set the event listeners for view
+     * Lambdas used for all action events to avoid instantiating new Action Event
+     * */
     private void setEventListeners(){
 
+        //Disable unassociated fields when type/month radio selected
         reportTypeMonthRadio.setOnAction(actionEvent -> {
             contactComboBox.setDisable(true);
             customerComboBox.setDisable(true);
@@ -148,6 +150,7 @@ public class ReportViewController implements Initializable {
             monthComboBox.setDisable(false);
         });
 
+        //Disable unassociated fields when customer schedule radio selected
         scheduleByCustomerRadio.setOnAction(actionEvent -> {
             contactComboBox.setDisable(true);
             typeComboBox.setDisable(true);
@@ -155,6 +158,7 @@ public class ReportViewController implements Initializable {
             customerComboBox.setDisable(false);
         });
 
+        //Disable unassociated fields when contact schedule radio selected
         scheduleByContactRadio.setOnAction(actionEvent -> {
             typeComboBox.setDisable(true);
             monthComboBox.setDisable(true);
@@ -162,6 +166,7 @@ public class ReportViewController implements Initializable {
             contactComboBox.setDisable(false);
         });
 
+        //Determine selected radio option and call associated method when generate report button is pressed
         generateReportButton.setOnAction(actionEvent -> {
             if (scheduleByContactRadio.isSelected()){
                 getContactAppointments();
@@ -199,6 +204,7 @@ public class ReportViewController implements Initializable {
             contacts.add(contact.getName());
         }
 
+        //Set the items of the combo box
         contactComboBox.setItems(contacts);
 
         //Populate customer combo box
@@ -214,8 +220,24 @@ public class ReportViewController implements Initializable {
 
     /**Retrieve appointments by month and type and display in the appointment table*/
     private void getTypeMonthAppointments(){
+
+        //Check if input is valid
         if (InputValidator.validateReportView(this)){
-            appointmentDataTable.setItems(Database.getTypeMonthAppointments(typeComboBox.getValue(), monthComboBox.getSelectionModel().getSelectedIndex()));
+
+            //Get types in english
+            ResourceBundle resourceBundleEn = ResourceBundle.getBundle("resources.AppointmentForm", Locale.US);
+            ObservableList<String> typesInEnglish = FXCollections.observableArrayList(resourceBundleEn.getString("debriefType"),
+                    resourceBundleEn.getString("newCustomerType"),
+                    resourceBundleEn.getString("salesInformationType"),
+                    resourceBundleEn.getString("productDesignType"));
+
+            //Populate the appointment table
+            appointmentDataTable.setItems(Database.getTypeMonthAppointments
+                    (typesInEnglish.get(typeComboBox.getSelectionModel().getSelectedIndex()),
+                            monthComboBox.getSelectionModel().getSelectedIndex()));
+
+            //If tests pass, hide error label
+            errorLabel.setVisible(false);
         }
     }
 
@@ -223,17 +245,26 @@ public class ReportViewController implements Initializable {
     private void getCustomerAppointments(){
         if (InputValidator.validateReportView(this)){
             appointmentDataTable.setItems(Database.getCustomerAppointments(customerComboBox.getValue()));
+            errorLabel.setVisible(false);
         }
     }
 
     /**Retrieve appointments by Contact name and display in the appointment table*/
     private void getContactAppointments(){
-        if (InputValidator.validateReportView(this)){
+
+        //Check if input is valid
+        if (InputValidator.validateReportView(this)) {
+
+            //If tests pass, populate appointment table and hide error label
             appointmentDataTable.setItems(Database.getContactAppointments(contactComboBox.getValue()));
+            errorLabel.setVisible(false);
         }
     }
 
-    /**Set the cell factories for the appointment table*/
+    /**Set the cell factories for the appointment table
+     * Lambdas used for a row factories to avoid instantiating TableRow Object
+     * Lambdas used for cell factories to avoid instantiating TableCell Object
+     * */
     private void setCellFactories(){
 
 
@@ -343,6 +374,7 @@ public class ReportViewController implements Initializable {
             }
         });
     }
+
 
 }
 

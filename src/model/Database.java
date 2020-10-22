@@ -1,12 +1,12 @@
 package model;
 
-import com.mysql.cj.jdbc.exceptions.CommunicationsException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
+import java.util.*;
 import java.util.Date;
 
 /**Class for handling database operations*/
@@ -22,7 +22,6 @@ public class Database {
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
-
     }
 
     /**Disconnect from the database*/
@@ -42,11 +41,12 @@ public class Database {
     public static ObservableList<Contact> getContacts(){
         //Create connection
         connect();
+
         //List to store contacts
        ObservableList<Contact> contactList = FXCollections.observableArrayList();
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
+
             //Get result set
             ResultSet queryResult = statement.executeQuery("SELECT * FROM contacts;");
 
@@ -74,10 +74,10 @@ public class Database {
     public static ObservableList<String> getAllCountries(){
         //Create connection
         connect();
+
         //List to store the countries
         ObservableList<String> countryList = FXCollections.observableArrayList();
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
 
             //Get result set
@@ -96,35 +96,6 @@ public class Database {
         return countryList;
     }
 
-    /**
-     * @return list of divisions
-     */
-    public static ObservableList<Division> getAllDivisions(){
-        //Create connection
-        connect();
-        //List to store divisions
-        ObservableList<Division> divisionList = FXCollections.observableArrayList();
-
-        //Try statement
-        try(Statement statement = connection.createStatement()){
-            //Get result set
-            ResultSet queryResult = statement.executeQuery("SELECT * FROM divisions;");
-
-            //Loop through query result and append division objects to list
-            while(queryResult.next()){
-                divisionList.add(new Division(queryResult.getInt("Division_ID"),
-                        queryResult.getString("Division"),
-                        queryResult.getInt("COUNTRY_ID")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        //Close connection
-        disconnect();
-
-        //Return the division list
-        return divisionList;
-    }
 
     /**
      * Get a list of all first-level-divisions for a country
@@ -134,15 +105,18 @@ public class Database {
     public static ObservableList<String> getCountryDivisions(String country){
         //Create connection
         connect();
+
         //List to store divisions
         ObservableList<String> divisionList = FXCollections.observableArrayList();
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
-            //Get result set
-            ResultSet queryResult = statement.executeQuery("SELECT first_level_divisions.Division_ID, first_level_divisions.Division, first_level_divisions.COUNTRY_ID " +
+            //Query String
+            String countryDivisionQuery = "SELECT first_level_divisions.Division_ID, first_level_divisions.Division, first_level_divisions.COUNTRY_ID " +
                     "FROM first_level_divisions JOIN countries ON first_level_divisions.COUNTRY_ID = countries.Country_ID " +
-                    "WHERE Country = '" + country + "';");
+                    "WHERE Country = '" + country + "';";
+
+            //Get result set
+            ResultSet queryResult = statement.executeQuery(countryDivisionQuery);
 
             //Loop through query result and append division name to list
             while(queryResult.next()){
@@ -170,8 +144,8 @@ public class Database {
         //List to store appointments
         ObservableList<Appointment> appointmentList = FXCollections.observableArrayList();
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
+
             //Get result set
             ResultSet appointmentQueryResult = statement.executeQuery("SELECT * FROM appointments ORDER BY Start ASC;");
 
@@ -187,8 +161,40 @@ public class Database {
                     contactName = contactQueryResult.getString("Contact_Name");
                 }
 
-                ZoneId current = ZoneId.systemDefault();
+                /*
+                Translate the type to french if necessary
+                 */
+                //Store the value of type
+                String type = "";
 
+                //If the language is english, retrieve the type form the database
+                if (Locale.getDefault().getLanguage().equals("en")) {
+                    type = appointmentQueryResult.getString("Type");
+
+                    //If the language is french
+                } else if (Locale.getDefault().getLanguage().equals("fr")) {
+
+                    //Get resource bundles for french and english
+                    ResourceBundle resourceBundleFr = ResourceBundle.getBundle("resources.AppointmentForm", Locale.FRANCE);
+                    ResourceBundle resourceBundleEn = ResourceBundle.getBundle("resources.AppointmentForm", Locale.US);
+
+                    //Get all keys from french resource bundle
+                    Enumeration<String> keys = resourceBundleFr.getKeys();
+
+                    //For all the keys in the french resource
+                    while (keys.hasMoreElements()) {
+
+                        //Store the key value in a string
+                        String key = keys.nextElement();
+
+                        //Check if the string returned from the english resource matches the string returned from the french resource
+                        if (resourceBundleEn.getString(key).equals(appointmentQueryResult.getString("Type"))) {
+
+                            //Set the type to the string from the french resource of the current key
+                            type = resourceBundleFr.getString(key);
+                        }
+                    }
+                }
 
                 //Create appointment and add to list
                 appointmentList.add(new Appointment(contactName,
@@ -196,7 +202,7 @@ public class Database {
                                                     appointmentQueryResult.getString("Title"),
                                                     appointmentQueryResult.getString("Description"),
                                                     appointmentQueryResult.getString("Location"),
-                                                    appointmentQueryResult.getString("Type"),
+                                                    type,
                                                     appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                                                     appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                                                     appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -214,6 +220,11 @@ public class Database {
         return appointmentList;
     }
 
+    /**
+     * Get the appointment associated with the appoitnment id
+     * @param appointmentID the id to search the table for
+     * @return the appointment associated with the id
+     */
     public static Appointment getAppointmentByID(int appointmentID){
         //Create connection
         connect();
@@ -247,13 +258,45 @@ public class Database {
                     contactName = contactQueryResult.getString("Contact_Name");
                 }
 
+                //Store the value of type
+                String type = "";
+
+                //If the language is english, retrieve the type form the database
+                if (Locale.getDefault().getLanguage().equals("en")) {
+                    type = appointmentQueryResult.getString("Type");
+
+                    //If the language is french
+                } else if (Locale.getDefault().getLanguage().equals("fr")) {
+
+                    //Get resource bundles for french and english
+                    ResourceBundle resourceBundleFr = ResourceBundle.getBundle("resources.AppointmentForm", Locale.FRANCE);
+                    ResourceBundle resourceBundleEn = ResourceBundle.getBundle("resources.AppointmentForm", Locale.US);
+
+                    //Get all keys from french resource bundle
+                    Enumeration<String> keys = resourceBundleFr.getKeys();
+
+                    //For all the keys in the french resource
+                    while (keys.hasMoreElements()) {
+
+                        //Store the key value in a string
+                        String key = keys.nextElement();
+
+                        //Check if the string returned from the english resource matches the string returned from the french resource
+                        if (resourceBundleEn.getString(key).equals(appointmentQueryResult.getString("Type"))) {
+
+                            //Set the type to the string from the french resource of the current key
+                            type = resourceBundleFr.getString(key);
+                        }
+                    }
+                }
+
                 //Create appointment and add to list
                 appointment =  new Appointment(contactName,
                                     appointmentQueryResult.getInt("Appointment_ID"),
                                     appointmentQueryResult.getString("Title"),
                                     appointmentQueryResult.getString("Description"),
                                     appointmentQueryResult.getString("Location"),
-                                    appointmentQueryResult.getString("Type"),
+                                    type,
                                     appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                                     appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                                     appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -304,13 +347,45 @@ public class Database {
                     contactName = contactNameQueryResult.getString("Contact_Name");
                 }
 
+                //Store the value of type
+                String type = "";
+
+                //If the language is english, retrieve the type form the database
+                if (Locale.getDefault().getLanguage().equals("en")) {
+                    type = appointmentQueryResult.getString("Type");
+
+                    //If the language is french
+                } else if (Locale.getDefault().getLanguage().equals("fr")) {
+
+                    //Get resource bundles for french and english
+                    ResourceBundle resourceBundleFr = ResourceBundle.getBundle("resources.AppointmentForm", Locale.FRANCE);
+                    ResourceBundle resourceBundleEn = ResourceBundle.getBundle("resources.AppointmentForm", Locale.US);
+
+                    //Get all keys from french resource bundle
+                    Enumeration<String> keys = resourceBundleFr.getKeys();
+
+                    //For all the keys in the french resource
+                    while (keys.hasMoreElements()) {
+
+                        //Store the key value in a string
+                        String key = keys.nextElement();
+
+                        //Check if the string returned from the english resource matches the string returned from the french resource
+                        if (resourceBundleEn.getString(key).equals(appointmentQueryResult.getString("Type"))) {
+
+                            //Set the type to the string from the french resource of the current key
+                            type = resourceBundleFr.getString(key);
+                        }
+                    }
+                }
+
                 //Create appointment and add to list
                 appointmentList.add(new Appointment(contactName,
                         appointmentQueryResult.getInt("Appointment_ID"),
                         appointmentQueryResult.getString("Title"),
                         appointmentQueryResult.getString("Description"),
                         appointmentQueryResult.getString("Location"),
-                        appointmentQueryResult.getString("Type"),
+                        type,
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                         appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -328,7 +403,11 @@ public class Database {
         return appointmentList;
     }
 
-
+    /**
+     * Get a list of appointments associated with a contact
+     * @param contactName the contact to search the table for
+     * @return list of all appointments associated with the contact
+     */
     public static ObservableList<Appointment> getContactAppointments(String contactName){
         //Create connection
         connect();
@@ -351,9 +430,38 @@ public class Database {
                 //Get result set
                 ResultSet appointmentQueryResult = statement.executeQuery("SELECT * FROM appointments WHERE Contact_ID = '" + contactID + "' ORDER BY Start ASC;");
 
-                //Loop through query result and append Contact objects to list
                 while (appointmentQueryResult.next()) {
+                    //Store the value of type
+                    String type = "";
 
+                    //If the language is english, retrieve the type form the database
+                    if (Locale.getDefault().getLanguage().equals("en")) {
+                        type = appointmentQueryResult.getString("Type");
+
+                        //If the language is french
+                    } else if (Locale.getDefault().getLanguage().equals("fr")) {
+
+                        //Get resource bundles for french and english
+                        ResourceBundle resourceBundleFr = ResourceBundle.getBundle("resources.AppointmentForm", Locale.FRANCE);
+                        ResourceBundle resourceBundleEn = ResourceBundle.getBundle("resources.AppointmentForm", Locale.US);
+
+                        //Get all keys from french resource bundle
+                        Enumeration<String> keys = resourceBundleFr.getKeys();
+
+                        //For all the keys in the french resource
+                        while (keys.hasMoreElements()) {
+
+                            //Store the key value in a string
+                            String key = keys.nextElement();
+
+                            //Check if the string returned from the english resource matches the string returned from the french resource
+                            if (resourceBundleEn.getString(key).equals(appointmentQueryResult.getString("Type"))) {
+
+                                //Set the type to the string from the french resource of the current key
+                                type = resourceBundleFr.getString(key);
+                            }
+                        }
+                    }
 
                     //Create appointment and add to list
                     appointmentList.add(new Appointment(contactName,
@@ -368,7 +476,8 @@ public class Database {
                             appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                             appointmentQueryResult.getInt("Customer_ID"),
                             appointmentQueryResult.getString("Created_By")));
-                }
+                    }
+
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -380,9 +489,16 @@ public class Database {
 
     }
 
+    /**
+     * Get a list of appointments associated with a type adn month
+     * @param type the type of appointment to search the table for
+     * @param monthIndex the index of the month in the combo box to search the table for
+     * @return list of appointments associated with the type and month
+     */
     public static ObservableList<Appointment> getTypeMonthAppointments(String type, int monthIndex){
         //Create connection
         connect();
+
         //List to store appointments
         ObservableList<Appointment> appointmentList = FXCollections.observableArrayList();
 
@@ -392,11 +508,15 @@ public class Database {
 
         //Try statement
         try(Statement statement = connection.createStatement()){
-            //Get result set
-            ResultSet appointmentQueryResult = statement.executeQuery("SELECT * FROM appointments WHERE Type = '" +
-                    type + "' AND  Start BETWEEN '" + monthStart + "' AND '" + monthEnd + "' ORDER BY Start ASC;");
 
-            //Loop through query result and append Contact objects to list
+            //Query String
+            String appointmentQuery = "SELECT * FROM appointments WHERE Type = '" +
+                    type + "' AND  Start BETWEEN '" + monthStart + "' AND '" + monthEnd + "' ORDER BY Start ASC;";
+
+            //Get result set
+            ResultSet appointmentQueryResult = statement.executeQuery(appointmentQuery);
+
+            //Loop through the results of the appointment query
             while(appointmentQueryResult.next()){
 
                 //Get the contact name with the contact id associated with the appointment
@@ -408,13 +528,19 @@ public class Database {
                     contactName = contactQueryResult.getString("Contact_Name");
                 }
 
+                /*
+                Translate the type from english to french if necessary
+                 */
+                type = translateTypeIfFrenchLocale(appointmentQueryResult);
+
+
                 //Create appointment and add to list
                 appointmentList.add(new Appointment(contactName,
                         appointmentQueryResult.getInt("Appointment_ID"),
                         appointmentQueryResult.getString("Title"),
                         appointmentQueryResult.getString("Description"),
                         appointmentQueryResult.getString("Location"),
-                        appointmentQueryResult.getString("Type"),
+                        type,
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                         appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -465,13 +591,18 @@ public class Database {
                     contactName = contactQueryResult.getString("Contact_Name");
                 }
 
+                /*
+                Translate the type from english to french if necessary
+                 */
+                String type = translateTypeIfFrenchLocale(appointmentQueryResult);
+
                 //Create appointment and add to list
                 appointmentList.add(new Appointment(contactName,
                         appointmentQueryResult.getInt("Appointment_ID"),
                         appointmentQueryResult.getString("Title"),
                         appointmentQueryResult.getString("Description"),
                         appointmentQueryResult.getString("Location"),
-                        appointmentQueryResult.getString("Type"),
+                        type,
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                         appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -503,7 +634,6 @@ public class Database {
         //List to store appointments
         ObservableList<Appointment> appointmentList = FXCollections.observableArrayList();
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
             String appointmentQuery = "SELECT * FROM appointments WHERE Start BETWEEN '" + currentMonthStart + "' AND '" + currentMonthEnd + "' ORDER BY Start ASC;";
 
@@ -522,13 +652,18 @@ public class Database {
                     contactName = contactQueryResult.getString("Contact_Name");
                 }
 
+                /*
+                Translate the type from english to french if necessary
+                 */
+                String type = translateTypeIfFrenchLocale(appointmentQueryResult);
+
                 //Create appointment and add to list
                 appointmentList.add(new Appointment(contactName,
                         appointmentQueryResult.getInt("Appointment_ID"),
                         appointmentQueryResult.getString("Title"),
                         appointmentQueryResult.getString("Description"),
                         appointmentQueryResult.getString("Location"),
-                        appointmentQueryResult.getString("Type"),
+                        type,
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                         appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                         appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -550,7 +685,7 @@ public class Database {
      * @param user the current application user
      * @param appointment the appointment to add
      */
-    public static void addAppointment(Appointment appointment, User user) throws ParseException {
+    public static void addAppointment(Appointment appointment, User user){
 
         //Get a timestamp of the current date and time
         Timestamp currentDateTimestamp = Timestamp.valueOf(convertToUTC(LocalDateTime.now()));
@@ -580,16 +715,26 @@ public class Database {
             e.printStackTrace();
         }
 
-
-        //SYNTAX ERROR
         //Insert appointment into appointments table
         try(Statement statement = connection.createStatement()){
             String appointmentQuery = "INSERT INTO appointments (Appointment_ID, Title, " +
                     "Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) " +
-                    "Values ('" + appointment.getAppointmentID() + "' , '" + appointment.getTitle() + "' , '" + appointment.getDescription() + "' , '" +
-                    appointment.getLocation() + "' , '" + appointment.getType() + "' , '" + startDateTime + "' , '" +
-                    endDateTime + "' , '" + currentDateTimestamp + "' , '" + appointment.getUser() + "' , '" + currentDateTimestamp + "' , '" + appointment.getUser() + "' , '" +
-                    appointment.getCustomerID() + "' , '" + user.getUserID() + "' , '" + contactID + "');";
+                    "Values ('" + appointment.getAppointmentID() + "' , '" +
+                                appointment.getTitle() + "' , '" +
+                                appointment.getDescription() + "' , '" +
+                                appointment.getLocation() + "' , '" +
+                                appointment.getType() + "' , '" +
+                                startDateTime + "' , '" +
+                                endDateTime + "' , '" +
+                                currentDateTimestamp + "' , '" +
+                                 appointment.getUser() + "' , '" +
+                                currentDateTimestamp + "' , '" +
+                                appointment.getUser() + "' , '" +
+                                appointment.getCustomerID() + "' , '" +
+                                user.getUserID() + "' , '" +
+                                contactID + "');";
+
+            //Execute Query
             statement.executeUpdate(appointmentQuery);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -606,9 +751,13 @@ public class Database {
         //Create connection
         connect();
 
-        //Remove customer from customer table
+        //Remove appointment from appointments table
         try(Statement statement = connection.createStatement()){
-            statement.executeUpdate("DELETE FROM appointments WHERE Appointment_ID = '" + appointment.getAppointmentID() + "';");
+            //Query String
+            String deleteAppointmentQuery = "DELETE FROM appointments WHERE Appointment_ID = '" + appointment.getAppointmentID() + "';";
+
+            //Execute query
+            statement.executeUpdate(deleteAppointmentQuery);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -621,7 +770,7 @@ public class Database {
      * @param user the current application user
      * @param appointment the appointment to update
      */
-    public static void updateAppontment(Appointment appointment, User user) throws ParseException {
+    public static void updateAppointment(Appointment appointment, User user) throws ParseException {
 
         //Get current date and time
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss");
@@ -629,8 +778,8 @@ public class Database {
         Timestamp currentDateTimestamp = new Timestamp(date.getTime());
 
         //Get start and end date and time
-        LocalDateTime startDateTime = LocalDateTime.of(appointment.getStartDate(), appointment.getStartTime());
-        LocalDateTime endDateTime = LocalDateTime.of(appointment.getEndDate(), appointment.getEndTime());
+        LocalDateTime startDateTime = convertToUTC(LocalDateTime.of(appointment.getStartDate(), appointment.getStartTime()));
+        LocalDateTime endDateTime = convertToUTC(LocalDateTime.of(appointment.getEndDate(), appointment.getEndTime()));
 
         //Variable to store contact id
         int contactID = 0;
@@ -640,19 +789,24 @@ public class Database {
 
         //Get contact id
         try(Statement statement = connection.createStatement()){
+            //Query String
+            String contactQuery = "SELECT Contact_ID FROM contacts WHERE Contact_Name = '" +
+                    appointment.getContactName() + "';";
+
             //Get result set
-            ResultSet resultSet = statement.executeQuery("SELECT Contact_ID FROM contacts WHERE Contact_Name = '" +
-                    appointment.getContactName() + "';");
+            ResultSet contactResultSet = statement.executeQuery(contactQuery);
 
-            //Move cursor to first row of result set
-            resultSet.next();
+            //Loop through result set
+            while (contactResultSet.next()) {
+                //Store the contact id
+                contactID = contactResultSet.getInt("Contact_ID");
+            }
 
-            //Store the contact id
-            contactID = resultSet.getInt("Contact_ID");
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
+        //Query String
         String appointmentQuery = "UPDATE appointments SET Title = '" + appointment.getTitle() + "' , " +
                 "Description = '" + appointment.getDescription() + "' , Location = '" + appointment.getLocation() + "' , Type = '" + appointment.getType() +
                 "' , Start = '" + startDateTime + "' , End = '" + endDateTime +
@@ -674,13 +828,13 @@ public class Database {
      * Check for appointment within 15 minutes of the current local time
      * @return the appointment
      */
-    public static Appointment getAppointmentsWithin15Min(){
+    public static Appointment getAppointmentWithin15Min(){
         //Create connection
         connect();
-        //List to store appointments
+
+        //Store appointment
         Appointment upcomingAppointment = null;
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
 
             //Query String
@@ -688,13 +842,14 @@ public class Database {
                     "ON appointments.Contact_ID = contacts.Contact_ID " +
                     "WHERE start BETWEEN '" + convertToUTC(LocalDateTime.now()) +
                     "' and '" + convertToUTC(LocalDateTime.now().plusMinutes(15)) + "';";
+
             //Get result set
             ResultSet appointmentQueryResult = statement.executeQuery(appointmentQuery);
 
-            //Loop through query result and append Contact objects to list
+            //Loop through query result
             while(appointmentQueryResult.next()){
 
-                //Create appointment and add to list
+                //Set upcoming appointment to result
                 upcomingAppointment = new Appointment(
                         appointmentQueryResult.getString("Contact_Name"),
                         appointmentQueryResult.getInt("Appointment_ID"),
@@ -702,10 +857,10 @@ public class Database {
                         appointmentQueryResult.getString("Description"),
                         appointmentQueryResult.getString("Location"),
                         appointmentQueryResult.getString("Type"),
-                        appointmentQueryResult.getDate("Start").toLocalDate(),
-                        appointmentQueryResult.getTime("Start").toLocalTime(),
-                        appointmentQueryResult.getDate("End").toLocalDate(),
-                        appointmentQueryResult.getTime("End").toLocalTime(),
+                        appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                        appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
+                        appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                        appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                         appointmentQueryResult.getInt("Customer_ID"),
                         appointmentQueryResult.getString("Created_By"));
             }
@@ -715,10 +870,17 @@ public class Database {
         //Close connection
         disconnect();
 
-        //Return the appointment list
+        //Return the appointment
         return upcomingAppointment;
     }
 
+    /**
+     * Check if the customers appointment overlaps with another appointment of the same customer
+     * @param customerID the customer id to search the table for
+     * @param start the start date and time of the appointment
+     * @param end the end date and time of the appointment
+     * @return the result of the check
+     */
     public static boolean customerAppointmentOverlaps(String customerID, LocalDateTime start, LocalDateTime end){
         //Create connection
         connect();
@@ -732,11 +894,13 @@ public class Database {
             //Query string
             String query = "SELECT * FROM appointments " +
                     "WHERE (Customer_ID = '" + customerID +
-                    "' AND Start BETWEEN '" + convertToUTC(start).minusMinutes(1) +
-                    "' AND '" + convertToUTC(end).plusMinutes(1) +
+                    "' AND Start BETWEEN '" + convertToUTC(start).plusMinutes(1) +
+                    "' AND '" + convertToUTC(end).minusMinutes(1) +
                     "') OR (Customer_ID = '" + customerID +
-                    "' AND End BETWEEN '" + convertToUTC(start).minusMinutes(1) +
-                    "' AND '" + convertToUTC(end).plusMinutes(1) + "');";
+                    "' AND End BETWEEN '" + convertToUTC(start).plusMinutes(1) +
+                    "' AND '" + convertToUTC(end).minusMinutes(1) + "') " +
+                    "OR ((Customer_ID = '" + customerID + "' AND Start = '" + convertToUTC(start) + "') " +
+                    "OR (Customer_ID = '" + customerID + "' AND End = '" + convertToUTC(end) + "'));";
 
             //Get result set
             ResultSet appointmentQueryResult = statement.executeQuery(query);
@@ -752,7 +916,7 @@ public class Database {
         //Close connection
         disconnect();
 
-        //Return the appointment list
+        //Return the result of the check
         return appointmentOverlaps;
     }
 
@@ -765,10 +929,10 @@ public class Database {
     public static ObservableList<Customer> getAllCustomers(){
         //Create connection
         connect();
+
         //List to store customers
         ObservableList<Customer> customerList = FXCollections.observableArrayList();
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
             //Get result set
             ResultSet queryResult = statement.executeQuery("SELECT * FROM customers;");
@@ -779,8 +943,6 @@ public class Database {
                 //Create variables for division name and country name
                 String divisionName;
                 String countryName;
-
-
 
                 //Try statement
                 try(Statement statement1 = connection.createStatement()){
@@ -825,13 +987,16 @@ public class Database {
     public static Customer getCustomerByID(int id){
         //Create connection
         connect();
-        //List to store customers
+
+        //Store customer
         Customer customer = null;
 
-        //Try statement
         try(Statement statement = connection.createStatement()){
+            //Query String
+            String customerQuery = "SELECT * FROM customers WHERE Customer_ID = '" + id + "';";
+
             //Get result set
-            ResultSet queryResult = statement.executeQuery("SELECT * FROM customers WHERE Customer_ID = '" + id + "';");
+            ResultSet queryResult = statement.executeQuery(customerQuery);
 
             //Loop through query result and append Customer objects to list
             while(queryResult.next()){
@@ -892,26 +1057,33 @@ public class Database {
 
         //Get division name
         try(Statement statement = connection.createStatement()){
+            //Query String
+            String divisionQuery = "SELECT Division_ID FROM first_level_divisions WHERE Division = '" +
+                    customer.getDivision() + "';";
+
             //Get result set
-            ResultSet resultSet = statement.executeQuery("SELECT Division_ID FROM first_level_divisions WHERE Division = '" +
-                    customer.getDivision() + "';");
+            ResultSet divisionResultSet = statement.executeQuery(divisionQuery);
 
             //Move cursor to first row of result set
-            resultSet.next();
+            divisionResultSet.next();
 
             //Store the division id
-            divisionID = resultSet.getInt("Division_ID");
+            divisionID = divisionResultSet.getInt("Division_ID");
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         //Insert customer into customers table
         try(Statement statement = connection.createStatement()){
-            String query = "INSERT INTO customers (Customer_ID, Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
+
+            //Query String
+            String customerQuery = "INSERT INTO customers (Customer_ID, Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
                     "Values ('" + customer.getCustomerID() + "' , '" + customer.getName() + "' , '" + customer.getAddress() + "' , '" +
                     customer.getPostalCode() + "' , '" + customer.getPhoneNumber() + "' , '" + currentDateTimestamp + "' , '" +
                     user.getUserName() + "' , '" + currentDateTimestamp + "' , '" + user.getUserName() + "' , '" + divisionID + "');";
-            statement.executeUpdate(query);
+
+            //Execute the update
+            statement.executeUpdate(customerQuery);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -930,7 +1102,11 @@ public class Database {
 
         //Remove customer from customer table
         try(Statement statement = connection.createStatement()){
-            statement.executeUpdate("DELETE FROM customers WHERE Customer_ID = '" + customer.getCustomerID() + "';");
+            //Query String
+            String removeCustomerQuery = "DELETE FROM customers WHERE Customer_ID = '" + customer.getCustomerID() + "';";
+
+            //Execute the update
+            statement.executeUpdate(removeCustomerQuery);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -972,10 +1148,18 @@ public class Database {
 
         //Update customer in customers table
         try(Statement statement = connection.createStatement()){
-            statement.executeUpdate("UPDATE customers SET Customer_Name = '" + customer.getName() + "' , " +
-                    "Address = '" + customer.getAddress() + "' , Postal_Code = '" + customer.getPostalCode() + "' , Phone = '" + customer.getPhoneNumber() +
-                    "' , Last_Update = '" + currentDateTimestamp + "' , Last_Updated_By = '" + user.getUserName() +
-                    "', Division_ID = '" + divisionID + "' WHERE Customer_ID = '" + customer.getCustomerID() + "';");
+            //Query String
+            String updateCustomerQuery = "UPDATE customers SET Customer_Name = '" + customer.getName() + "' , " +
+                    "Address = '" + customer.getAddress() +
+                    "' , Postal_Code = '" + customer.getPostalCode() +
+                    "' , Phone = '" + customer.getPhoneNumber() +
+                    "' , Last_Update = '" + currentDateTimestamp +
+                    "' , Last_Updated_By = '" + user.getUserName() +
+                    "', Division_ID = '" + divisionID +
+                    "' WHERE Customer_ID = '" + customer.getCustomerID() + "';";
+
+            //Execute the update
+            statement.executeUpdate(updateCustomerQuery);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -994,16 +1178,18 @@ public class Database {
      */
     public static boolean checkUserCredentials(String username, String password){
 
-        //Return variable
+        //Store the result of the check
         boolean isValid = false;
 
         //Create connection
         connect();
 
         try(Statement statement = connection.createStatement()){
+            //Query String
+            String checkCredentialsQuery = "SELECT * FROM users WHERE User_Name = '" + username + "' AND Password = '" + password + "';";
 
             //Store the result set
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE User_Name = '" + username + "' AND Password = '" + password + "';");
+            ResultSet resultSet = statement.executeQuery(checkCredentialsQuery);
 
             //If the query returns a result, the login is valid
             while(resultSet.next()){
@@ -1012,40 +1198,16 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        //Return whether or not the login is valid
+
+        //Return is valid
         return isValid;
     }
 
     /**
-     * @return list of users
+     * Get user from username
+     * @param name the name to search the table for
+     * @return the user associated with the name
      */
-    public static ObservableList<User> getAllUsers(){
-        //Create connection
-        connect();
-        //List to store users
-        ObservableList<User> userList = FXCollections.observableArrayList();
-
-        //Try statement
-        try(Statement statement = connection.createStatement()){
-            //Get result set
-            ResultSet queryResult = statement.executeQuery("SELECT * FROM users;");
-
-            //Loop through query result and append user objects to list
-            while(queryResult.next()){
-                userList.add(new User(queryResult.getInt("User_ID"),
-                        queryResult.getString("User_Name"),
-                        queryResult.getString("Password")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        //Close connection
-        disconnect();
-
-        //Return the user list
-        return userList;
-    }
-
     public static User getUser(String name){
         //Create connection
         connect();
@@ -1073,11 +1235,56 @@ public class Database {
         return user;
     }
 
+    //Locale Methods
 
+    /**
+     * Translate the type to french for display purposes if the default language is french
+     * @param resultSet the result set to retrieve the english type from
+     * @return the type
+     * @throws SQLException if there is an error from the database
+     */
+    private static String translateTypeIfFrenchLocale(ResultSet resultSet) throws SQLException {
+        //String to store the type
+        String type = "";
 
+        //If the language is english, retrieve the type form the database
+        if (Locale.getDefault().getLanguage().equals("en")) {
+            type = resultSet.getString("Type");
 
+            //If the language is french
+        } else if (Locale.getDefault().getLanguage().equals("fr")) {
 
-    /**Convert local time to UTC time*/
+            //Get resource bundles for french and english
+            ResourceBundle resourceBundleFr = ResourceBundle.getBundle("resources.AppointmentForm", Locale.FRANCE);
+            ResourceBundle resourceBundleEn = ResourceBundle.getBundle("resources.AppointmentForm", Locale.US);
+
+            //Get all keys from french resource bundle
+            Enumeration<String> keys = resourceBundleFr.getKeys();
+
+            //For all the keys in the french resource
+            while (keys.hasMoreElements()) {
+
+                //Store the key value in a string
+                String key = keys.nextElement();
+
+                //Check if the string returned from the english resource matches the string returned from the french resource
+                if (resourceBundleEn.getString(key).equals(resultSet.getString("Type"))) {
+
+                    //Set the type to the string from the french resource of the current key
+                    type = resourceBundleFr.getString(key);
+                }
+            }
+        }
+
+        //Return the type
+        return type;
+    }
+
+    /**
+     * Convert the local time to UTC
+     * @param time the time to convert
+     * @return the time in UTC
+     */
     private static LocalDateTime convertToUTC(LocalDateTime time){
         return time.atZone(ZoneId.systemDefault())
                     .withZoneSameInstant(ZoneId.of("UTC"))
