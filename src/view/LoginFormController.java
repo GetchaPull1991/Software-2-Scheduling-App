@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/** Class to manage all Login Form UI Functionality*/
 public class LoginFormController implements Initializable {
 
     @FXML
@@ -53,6 +54,7 @@ public class LoginFormController implements Initializable {
     public ResourceBundle resourceBundle;
 
     /**
+     * Set the primary stage of the application
      * @param stage the stage to set
      */
     public void setPrimaryStage(Stage stage){

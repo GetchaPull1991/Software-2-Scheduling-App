@@ -1,6 +1,6 @@
 package model;
 
-/**Class to create and manage customers*/
+/**Class to create and manage Customers*/
 public class Customer {
     private String name;
     private String address;

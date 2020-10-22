@@ -12,6 +12,7 @@ import java.time.LocalTime;
 public class InputValidator {
 
     /**
+     * Validate the Login Form Input
      * @param controller the controller to validate input from
      * @return the result of the input validation
      */
@@ -63,6 +64,7 @@ public class InputValidator {
    }
 
     /**
+     * Validate the Customer Form Input
      * @param controller the controller to validate input from
      * @return the result of the input validation
      */
@@ -88,6 +90,7 @@ public class InputValidator {
    }
 
     /**
+     * Validate the Appointment Form Input
      * @param controller the controller to validate input from
      * @return the result of the input validation
      */
@@ -132,6 +135,7 @@ public class InputValidator {
     }
 
     /**
+     * Validate the Report View Input
      * @param controller the controller to validate input from
      * @return the result of the input validation
      */

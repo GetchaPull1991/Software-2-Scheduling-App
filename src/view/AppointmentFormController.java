@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.ResourceBundle;
 
+/** Class to manage all Appointment Form UI Functionality*/
 public class AppointmentFormController implements Initializable {
     @FXML
     public Label weeklyTablePlaceholderLabel;
@@ -406,7 +407,10 @@ public class AppointmentFormController implements Initializable {
         }
     }
 
-    /** Update a selected appointment*/
+    /**
+     * Update selected appointment
+     * @throws ParseException if the customer id cannot be parsed
+     */
     private void updateAppointment() throws ParseException {
 
         //Re-enable tab pane
@@ -495,11 +499,6 @@ public class AppointmentFormController implements Initializable {
 
         //If there are any appointments
         if (upcomingAppointment != null){
-
-            LocalDateTime startTime;
-            LocalDateTime endTime;
-
-
 
             //Display an information alert containing the appointment information
             informationAlert.setContentText(

@@ -29,6 +29,12 @@ JavaFX Version:
 JavaFX-SDK-11.0.2
 
 How To Run:
+The program can be opened in intelliJ and ran through the editor with the "Play" button.
+The JavaFX-SDK-11.02/lib folder is added as a library and a dependency
+The following VM options must be added in the configuration for JavaFX:
+--module-path "\Your\Path\javafx-sdk-11.0.2\lib" --add-modules javafx.controls,javafx.fxml,javafx.base
+
+I would like to create a packaged installer using install4j or something similar in the future.
 
 Additional Report: 
 My chosen additional report was to return a schedule of the current appointments for each Customer ID.

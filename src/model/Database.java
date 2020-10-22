@@ -36,6 +36,7 @@ public class Database {
     //Handle Contacts
 
     /**
+     * Get all of the organizations contacts
      * @return list of contacts
      */
     public static ObservableList<Contact> getContacts(){
@@ -69,6 +70,7 @@ public class Database {
     //Handle Countries and Divsions
 
     /**
+     * Get all of the supported countries
      * @return list of countries
      */
     public static ObservableList<String> getAllCountries(){
@@ -135,6 +137,7 @@ public class Database {
     //Handle Appointments
 
     /**
+     * Get a list of all of the appointments
      * @return list of all appointments
      */
     public static ObservableList<Appointment> getAllAppointments(){
@@ -315,6 +318,7 @@ public class Database {
     }
 
     /**
+     * Get aa list of the appointments for a specific customer
      * @param customerID the customer id to search the table
      * @return list of customers appointments
      */
@@ -469,7 +473,7 @@ public class Database {
                             appointmentQueryResult.getString("Title"),
                             appointmentQueryResult.getString("Description"),
                             appointmentQueryResult.getString("Location"),
-                            appointmentQueryResult.getString("Type"),
+                            type,
                             appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                             appointmentQueryResult.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalTime(),
                             appointmentQueryResult.getTimestamp("End").toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -682,6 +686,7 @@ public class Database {
     }
 
     /**
+     * Add an appointment
      * @param user the current application user
      * @param appointment the appointment to add
      */
@@ -745,6 +750,7 @@ public class Database {
     }
 
     /**
+     * Delete an appointment
      * @param appointment the appointment to remove
      */
     public static void removeAppointment(Appointment appointment){
@@ -769,6 +775,7 @@ public class Database {
     /**
      * @param user the current application user
      * @param appointment the appointment to update
+     * @throws ParseException if the date cannot be parsed
      */
     public static void updateAppointment(Appointment appointment, User user) throws ParseException {
 
@@ -923,6 +930,7 @@ public class Database {
     //Handle Customers
 
     /**
+     * Get a list of all the customers
      * @return list of customers
      */
     //Find out how to get the country for customer object
@@ -1041,10 +1049,11 @@ public class Database {
     }
 
     /**
+     * Add a customer
      * @param user the current application user
      * @param customer the customer to add
      */
-    public static void addCustomer(Customer customer, User user) throws ParseException {
+    public static void addCustomer(Customer customer, User user) {
 
         //Get a timestamp of the current date and time
         Timestamp currentDateTimestamp = Timestamp.valueOf(convertToUTC(LocalDateTime.now()));
@@ -1093,6 +1102,7 @@ public class Database {
     }
 
     /**
+     * Remove a customer
      * @param customer the customer to remove
      */
     public static void removeCustomer(Customer customer){
@@ -1117,10 +1127,11 @@ public class Database {
     }
 
     /**
+     * Update a customer
      * @param user the current application user
      * @param customer the customer to update
      */
-    public static void updateCustomer(Customer customer, User user) throws ParseException {
+    public static void updateCustomer(Customer customer, User user)  {
 
         //Get a timestamp of the current date and time
         Timestamp currentDateTimestamp = Timestamp.valueOf(convertToUTC(LocalDateTime.now()));
@@ -1172,6 +1183,7 @@ public class Database {
     //Handle Users
 
     /**
+     * Check the users credentials for access permission
      * @param username the username to search for
      * @param password the password to search for
      * @return boolean if the login is valid

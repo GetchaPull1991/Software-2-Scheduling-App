@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+/** Class to manage all Report View UI Functionality*/
 public class ReportViewController implements Initializable {
     @FXML
     public VBox reportFormVbox;

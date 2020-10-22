@@ -1,6 +1,6 @@
 package model;
 
-/**Class to create and manage contacts*/
+/**Class to create and manage Contacts*/
 public class Contact {
 
     private int contactID;

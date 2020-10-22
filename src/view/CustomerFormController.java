@@ -12,15 +12,14 @@ import model.Appointment;
 import model.Customer;
 import model.Database;
 import model.InputValidator;
-
 import java.net.URL;
-import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Random;
 import java.util.ResourceBundle;
 
+/** Class to manage all Customer Form UI Functionality*/
 public class CustomerFormController implements Initializable {
     @FXML
     public Label customerTablePlaceholder;
@@ -153,9 +152,8 @@ public class CustomerFormController implements Initializable {
 
     /**
      * Add a new customer to the table and the database
-     * @throws ParseException if date cannot be parsed
      */
-    private void addCustomer() throws ParseException {
+    private void addCustomer() {
 
         //Check if user input is valid
         if (InputValidator.validateCustomerForm(this)){
@@ -215,9 +213,8 @@ public class CustomerFormController implements Initializable {
 
     /**
      * Update the customer in the table and the database
-     * @throws ParseException if date cannot be parsed
      */
-    private void updateCustomer() throws ParseException {
+    private void updateCustomer() {
 
         //Update the selected customer values
         selectedCustomer.setName(customerNameTextField.getText());
@@ -269,13 +266,7 @@ public class CustomerFormController implements Initializable {
         });
 
         //Add Customer when
-        customerSaveButton.setOnAction(actionEvent -> {
-            try {
-                addCustomer();
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        });
+        customerSaveButton.setOnAction(actionEvent -> addCustomer());
 
         //Update customer
         customerUpdateButton.setOnAction(actionEvent -> {
@@ -293,13 +284,7 @@ public class CustomerFormController implements Initializable {
 
                 //Set the text and event for the customer save button
                 customerSaveButton.setText(resourceBundle.getString("saveCustomerChangesButtonLabel"));
-                customerSaveButton.setOnAction(actionEvent1 -> {
-                    try {
-                        updateCustomer();
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                });
+                customerSaveButton.setOnAction(actionEvent1 -> updateCustomer());
             }
         });
 
@@ -428,13 +413,7 @@ public class CustomerFormController implements Initializable {
         customerDivisionComboBox.getSelectionModel().clearSelection();
 
         //Change save button action event to add customer
-        customerSaveButton.setOnAction(actionEvent -> {
-            try {
-                addCustomer();
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        });
+        customerSaveButton.setOnAction(actionEvent -> addCustomer());
     }
 
 

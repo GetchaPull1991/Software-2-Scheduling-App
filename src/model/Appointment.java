@@ -30,6 +30,7 @@ public class Appointment {
      * @param endDate The end date to set
      * @param endTime The end time to set
      * @param customerID The customer id to set
+     * @param user The user to set
      */
     public Appointment(String contactName, int appointmentID, String title, String description, String location,
                        String type, LocalDate startDate, LocalTime startTime, LocalDate endDate, LocalTime endTime, int customerID, String user){

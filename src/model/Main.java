@@ -9,13 +9,14 @@ import view.LoginFormController;
 import java.net.URL;
 import java.util.Locale;
 
+/**The Main class that starts the application*/
 public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
 
         //TESTING
-        Locale.setDefault(Locale.FRANCE);
+        //Locale.setDefault(Locale.FRANCE);
 
         //Get resources from the fxml
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../view/LoginFormView.fxml"));

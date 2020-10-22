@@ -2,6 +2,7 @@ package model;
 
 import javafx.beans.property.SimpleStringProperty;
 
+/** Class to create and manage users*/
 public class User {
 
     private int userID;
