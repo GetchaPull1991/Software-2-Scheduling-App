@@ -976,6 +976,7 @@ public class AppointmentFormController implements Initializable {
             formLabel.setText(resourceBundle.getString("formLabelAppointments"));
             contentBorderPane.setCenter(appointmentFormGridPane);
             setTableData();
+            populateComboBoxes();
         });
 
         //Open customer view

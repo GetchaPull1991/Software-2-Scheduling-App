@@ -2,6 +2,7 @@ package model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,6 +23,7 @@ public class Database {
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
+
     }
 
     /**Disconnect from the database*/
@@ -1291,6 +1293,7 @@ public class Database {
         //Return the type
         return type;
     }
+
 
     /**
      * Convert the local time to UTC
