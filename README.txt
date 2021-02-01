@@ -1,4 +1,4 @@
-#Scheduling Application
+# Scheduling Application
 
 Project descriptionThe scheduling application was the final project for my Software 2 course at Western Governors University.
 The application was developed using JDK 11, JavaFX and MySQL.
